@@ -1,0 +1,33 @@
+name: flutter_application_nhat_ky
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  provider: ^6.1.5+1
+  shared_preferences: ^2.5.4
+  google_fonts: ^6.3.3
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/badges/
+    - assets/screens/
+    - assets/trees/
+    - assets/tree_health_stages/
+    - assets/ui_icons/decorations/
+    - assets/ui_icons/frames/
+    - assets/ui_icons/icons/
