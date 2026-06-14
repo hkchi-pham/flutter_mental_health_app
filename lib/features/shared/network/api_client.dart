@@ -34,6 +34,12 @@ class ApiClient {
   final String baseUrl;
   final http.Client _http;
 
+  /// Invoked once whenever the backend returns 401, before the [ApiException]
+  /// is thrown. The auth layer wires this to `AuthSession.clear()` +
+  /// redirect-to-login so any expired/invalid token anywhere in the app
+  /// automatically sends the user back to the login screen.
+  void Function()? onUnauthorized;
+
   static const _apiPrefix = '/api/v1';
 
   String? _token;
@@ -82,6 +88,7 @@ class ApiClient {
     // The backend returns {"detail": "..."} for errors (and, due to a backend
     // quirk, for some successes too — see INTEGRATION_FIXES.md in the API repo).
     final detail = body is Map ? body['detail']?.toString() : null;
+    if (res.statusCode == 401) onUnauthorized?.call();
     throw ApiException(res.statusCode, detail ?? res.body);
   }
 
