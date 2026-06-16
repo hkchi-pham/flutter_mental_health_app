@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../data/auth_repository.dart';
 import '../../../features/shared/network/api_client.dart';
+import 'widgets/auth_button.dart';
 import 'widgets/auth_frame.dart';
 import 'widgets/auth_text_field.dart';
 
@@ -145,6 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return AuthFrame(
       title: 'Create your garden',
+      onBack: widget.onLoginTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -210,7 +212,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
 
           // Submit button
-          _SubmitButton(
+          AuthButton(
+            label: 'Register',
             submitting: _submitting,
             onTap: _submitting ? null : _register,
           ),
@@ -227,67 +230,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({required this.submitting, required this.onTap});
-
-  final bool submitting;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Image.asset(
-            'assets/screens/register_btn_@2x.png',
-            height: 52,
-            fit: BoxFit.fitHeight,
-            errorBuilder: (_, _, _) => _FallbackButton(label: 'Register'),
-          ),
-          if (submitting)
-            const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FallbackButton extends StatelessWidget {
-  const _FallbackButton({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: const Color(0xFF6B8E5A),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
 
 class _LoginLink extends StatelessWidget {
   const _LoginLink({required this.onTap});

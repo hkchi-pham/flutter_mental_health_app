@@ -3,9 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Branded loading screen shown during the cold-launch token restore.
 ///
-/// Displays the garden background, the Soul Garden wordmark, and a subtle
-/// [CircularProgressIndicator] so the user knows the app is starting up.
-/// Shown for as long as [AuthRepository.restore] takes (typically < 300 ms).
+/// Displays the dedicated splash background, the "Soul Garden" wordmark logo
+/// (`app_icon_@3x.png`), and a subtle [CircularProgressIndicator] so the user
+/// knows the app is starting up. Shown for as long as [AuthRepository.restore]
+/// takes (typically < 300 ms).
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -15,13 +16,13 @@ class SplashScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Full-bleed garden background — falls back to the brand green if the
-          // asset is unavailable (errorBuilder pattern established across the app).
+          // Full-bleed splash background — falls back to a sky blue if the
+          // asset is unavailable (errorBuilder pattern used across the app).
           Image.asset(
-            'assets/screens/garden_background_@2x.png',
+            'assets/screens/splash_screen_background.png',
             fit: BoxFit.cover,
             errorBuilder: (_, _, _) => const ColoredBox(
-              color: Color(0xFF6B8E5A),
+              color: Color(0xFF8FC0E8),
             ),
           ),
 
@@ -30,50 +31,36 @@ class SplashScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // App mark — a simple leaf / sprout icon that matches the
-                // garden theme without requiring an external asset.
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.20),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.eco_rounded,
-                    color: Colors.white,
-                    size: 44,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // "Soul Garden" wordmark
-                Text(
-                  'Soul Garden',
-                  style: GoogleFonts.quintessential(
-                    fontSize: 34,
-                    color: Colors.white,
-                    shadows: [
-                      const Shadow(
-                        color: Color(0x55000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+                // "Soul Garden" wordmark logo — title is baked into the asset.
+                Image.asset(
+                  'assets/ui_icons/icons/app_icon_@3x.png',
+                  width: 240,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Text(
+                    'Soul Garden',
+                    style: GoogleFonts.quintessential(
+                      fontSize: 34,
+                      color: const Color(0xFF2F6B2E),
+                      shadows: const [
+                        Shadow(
+                          color: Color(0x55000000),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
                 const SizedBox(height: 36),
 
-                // Subtle spinner — small enough not to look alarming, visible
-                // enough to communicate activity.
+                // Subtle spinner — communicates activity without alarming.
                 const SizedBox(
-                  width: 28,
-                  height: 28,
+                  width: 30,
+                  height: 30,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                    strokeWidth: 2.6,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3E7D3A)),
                   ),
                 ),
               ],

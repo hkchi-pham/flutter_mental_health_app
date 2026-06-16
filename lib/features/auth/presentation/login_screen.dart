@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../data/auth_repository.dart';
 import '../../../features/shared/network/api_client.dart';
+import 'widgets/auth_button.dart';
 import 'widgets/auth_frame.dart';
 import 'widgets/auth_text_field.dart';
 
@@ -150,7 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
 
           // Submit button
-          _SubmitButton(
+          AuthButton(
+            label: 'Log In',
             submitting: _submitting,
             onTap: _submitting ? null : _login,
           ),
@@ -167,68 +169,6 @@ class _LoginScreenState extends State<LoginScreen> {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-class _SubmitButton extends StatelessWidget {
-  const _SubmitButton({required this.submitting, required this.onTap});
-
-  final bool submitting;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // PNG button — errorBuilder provides a styled green button
-          Image.asset(
-            'assets/screens/login_btn_@2x.png',
-            height: 52,
-            fit: BoxFit.fitHeight,
-            errorBuilder: (_, _, _) => _FallbackButton(label: 'Log In'),
-          ),
-          if (submitting)
-            const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FallbackButton extends StatelessWidget {
-  const _FallbackButton({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: const Color(0xFF6B8E5A),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
 
 class _RegisterLink extends StatelessWidget {
   const _RegisterLink({required this.onTap});
