@@ -17,6 +17,13 @@ import 'package:flutter/foundation.dart';
 class AppConfig {
   AppConfig._();
 
+  /// Host port the backend is reachable on during development.
+  ///
+  /// The docker-compose stack maps the API container's uvicorn (port 80) to
+  /// host port **8081** (`ports: - 8081:80`). If you instead run uvicorn
+  /// directly (e.g. `uvicorn main:app --port 8000`), change this to match.
+  static const int _devPort = 8081;
+
   /// The base URL used by [ApiClient] to reach the FastAPI backend.
   ///
   /// Returns the correct value for the current platform automatically for
@@ -24,14 +31,14 @@ class AppConfig {
   /// and production notes.
   static String get apiBaseUrl {
     if (kIsWeb) {
-      return 'http://localhost:8000';
+      return 'http://localhost:$_devPort';
     }
     if (Platform.isAndroid) {
       // 10.0.2.2 is the Android emulator's alias for the host machine's
       // loopback address (127.0.0.1 on the dev machine).
-      return 'http://10.0.2.2:8000';
+      return 'http://10.0.2.2:$_devPort';
     }
     // iOS simulator, macOS, Windows, Linux — localhost resolves to the host.
-    return 'http://localhost:8000';
+    return 'http://localhost:$_devPort';
   }
 }
