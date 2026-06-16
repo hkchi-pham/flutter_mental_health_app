@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart';
 
 /// Central application configuration.
 ///
-/// **Base URL selection (current auto-detection):**
-/// - Web          → http://localhost:8000
-/// - Android emu  → http://10.0.2.2:8000  (emulator loopback to host machine)
-/// - iOS sim / macOS / Windows / Linux → http://localhost:8000
+/// **Base URL selection (current auto-detection):** (dev port [_devPort] = 8081)
+/// - Web          → http://localhost:8081
+/// - Android emu  → http://10.0.2.2:8081  (emulator loopback to host machine)
+/// - iOS sim / macOS / Windows / Linux → http://localhost:8081
 ///
 /// **Physical device:** Auto-detection is not possible — the device and the
 /// host machine are on a LAN (or Tailscale) and `localhost` won't resolve.
