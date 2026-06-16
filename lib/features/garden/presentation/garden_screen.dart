@@ -9,6 +9,7 @@ import 'widgets/level_up_overlay.dart';
 import 'widgets/xp_toast_overlay.dart';
 import 'widgets/tree_death_toast_overlay.dart';
 import 'widgets/badge_popup.dart';
+import '../../auth/presentation/widgets/settings_menu_popup.dart';
 
 /// Garden color constants
 class _C {
@@ -62,6 +63,9 @@ class _GardenScreenState extends State<GardenScreen> {
   // Badge popup overlay
   OverlayEntry? _badgePopupOverlay;
 
+  // Settings menu overlay
+  OverlayEntry? _settingsOverlay;
+
   // Level-up and XP toast overlays
   OverlayEntry? _levelUpOverlay;
   OverlayEntry? _xpToastOverlay;
@@ -109,6 +113,8 @@ class _GardenScreenState extends State<GardenScreen> {
     }
     _badgePopupOverlay?.remove();
     _badgePopupOverlay = null;
+    _settingsOverlay?.remove();
+    _settingsOverlay = null;
     _treeOverlay?.remove();
     _treeOverlay = null;
     _levelUpOverlay?.remove();
@@ -578,6 +584,8 @@ class _GardenScreenState extends State<GardenScreen> {
               ),
               const Spacer(),
               _buildBadgePageButton(context, state),
+              const SizedBox(width: 8),
+              _buildSettingsButton(context),
             ],
           ),
         ),
@@ -669,6 +677,39 @@ class _GardenScreenState extends State<GardenScreen> {
       ),
     );
     Overlay.of(context).insert(_badgePopupOverlay!);
+  }
+
+  // ================================================================
+  // SETTINGS MENU
+  // ================================================================
+  Widget _buildSettingsButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showSettingsMenu(context),
+      child: Image.asset(
+        'assets/ui_icons/icons/menu_icon_@3x.png',
+        width: 40,
+        height: 40,
+        errorBuilder: (_, _, _) => const Icon(
+          Icons.settings,
+          size: 28,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  void _showSettingsMenu(BuildContext context) {
+    _settingsOverlay?.remove();
+    _settingsOverlay = null;
+    _settingsOverlay = OverlayEntry(
+      builder: (_) => SettingsMenuPopup(
+        onClose: () {
+          _settingsOverlay?.remove();
+          _settingsOverlay = null;
+        },
+      ),
+    );
+    Overlay.of(context).insert(_settingsOverlay!);
   }
 
   // ================================================================
