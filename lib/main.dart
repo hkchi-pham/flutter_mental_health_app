@@ -5,8 +5,15 @@ import 'features/auth/data/auth_repository.dart';
 import 'features/auth/data/auth_session.dart';
 import 'features/auth/data/token_store.dart';
 import 'features/auth/presentation/auth_gate.dart';
+import 'features/garden/data/api_garden_repository.dart';
+import 'features/garden/data/cache/change_queue.dart';
+import 'features/garden/data/cache/garden_cache_store.dart';
 import 'features/garden/data/garden_repository.dart';
-import 'features/garden/data/mock_garden_repository.dart';
+import 'features/garden/data/remote/garden_badge_remote_data_source.dart';
+import 'features/garden/data/remote/garden_decoration_remote_data_source.dart';
+import 'features/garden/data/remote/garden_item_remote_data_source.dart';
+import 'features/garden/data/remote/garden_user_remote_data_source.dart';
+import 'features/garden/data/sync/sync_coordinator.dart';
 import 'features/garden/logic/garden_provider.dart';
 import 'features/shared/config/app_config.dart';
 import 'features/shared/network/api_client.dart';
@@ -50,10 +57,45 @@ class MyApp extends StatelessWidget {
           ),
         ),
 
-        // ── Garden layer (Phase 10 will swap MockGardenRepository) ─────────
-        Provider<GardenRepository>(
-          create: (_) => MockGardenRepository(),
+        // ── Garden layer (Phase 10 swap: MockGardenRepository -> ApiGardenRepository) ──
+        //
+        // ApiGardenRepository is built once here and exposed as BOTH the
+        // concrete type (for SyncCoordinator) and the abstract GardenRepository
+        // interface (for GardenProvider). A single instance is shared.
+        Provider<ApiGardenRepository>(
+          create: (ctx) => ApiGardenRepository(
+            items: GardenItemRemoteDataSource(ctx.read<ApiClient>()),
+            decos: GardenDecorationRemoteDataSource(ctx.read<ApiClient>()),
+            badges: GardenBadgeRemoteDataSource(ctx.read<ApiClient>()),
+            user: GardenUserRemoteDataSource(ctx.read<ApiClient>()),
+            session: ctx.read<AuthSession>(),
+            cache: GardenCacheStore(),
+            queue: ChangeQueue(),
+          ),
         ),
+
+        // Expose the same instance through the GardenRepository interface so
+        // GardenProvider and any future consumers remain decoupled from the
+        // concrete type.
+        ProxyProvider<ApiGardenRepository, GardenRepository>(
+          update: (_, repo, prev) => repo,
+        ),
+
+        // SyncCoordinator — event-driven triggers only (app-open / reconnect /
+        // resume-from-background). Created once; start() is called here so
+        // the app-open sync fires on the first post-frame callback.
+        Provider<SyncCoordinator>(
+          create: (ctx) {
+            final coordinator = SyncCoordinator(
+              repo: ctx.read<ApiGardenRepository>(),
+              session: ctx.read<AuthSession>(),
+            );
+            coordinator.start();
+            return coordinator;
+          },
+          dispose: (_, coordinator) => coordinator.dispose(),
+        ),
+
         ChangeNotifierProxyProvider<GardenRepository, GardenProvider>(
           create: (ctx) =>
               GardenProvider(repository: ctx.read<GardenRepository>()),
