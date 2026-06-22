@@ -9,7 +9,8 @@ import 'widgets/level_up_overlay.dart';
 import 'widgets/xp_toast_overlay.dart';
 import 'widgets/tree_death_toast_overlay.dart';
 import 'widgets/badge_popup.dart';
-import '../../auth/presentation/widgets/settings_menu_popup.dart';
+// TEMP(Phase 10): restore with the settings menu when its tab is built.
+// import '../../auth/presentation/widgets/settings_menu_popup.dart';
 
 /// Garden color constants
 class _C {
@@ -584,8 +585,11 @@ class _GardenScreenState extends State<GardenScreen> {
               ),
               const Spacer(),
               _buildBadgePageButton(context, state),
-              const SizedBox(width: 8),
-              _buildSettingsButton(context),
+              // TEMP(Phase 10): settings/menu icon hidden — moving to a
+              // dedicated tab not yet built. Restore the SizedBox + button
+              // below (and the commented methods/import) when that tab exists.
+              // const SizedBox(width: 8),
+              // _buildSettingsButton(context),
             ],
           ),
         ),
@@ -682,35 +686,37 @@ class _GardenScreenState extends State<GardenScreen> {
   // ================================================================
   // SETTINGS MENU
   // ================================================================
-  Widget _buildSettingsButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showSettingsMenu(context),
-      child: Image.asset(
-        'assets/ui_icons/icons/menu_icon_@3x.png',
-        width: 40,
-        height: 40,
-        errorBuilder: (_, _, _) => const Icon(
-          Icons.settings,
-          size: 28,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
+  // TEMP(Phase 10): settings menu hidden until its dedicated tab is built.
+  // Restore these two methods (and the import + toolbar call site) together.
+  // Widget _buildSettingsButton(BuildContext context) {
+  //   return GestureDetector(
+  //     onTap: () => _showSettingsMenu(context),
+  //     child: Image.asset(
+  //       'assets/ui_icons/icons/menu_icon_@3x.png',
+  //       width: 40,
+  //       height: 40,
+  //       errorBuilder: (_, _, _) => const Icon(
+  //         Icons.settings,
+  //         size: 28,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  void _showSettingsMenu(BuildContext context) {
-    _settingsOverlay?.remove();
-    _settingsOverlay = null;
-    _settingsOverlay = OverlayEntry(
-      builder: (_) => SettingsMenuPopup(
-        onClose: () {
-          _settingsOverlay?.remove();
-          _settingsOverlay = null;
-        },
-      ),
-    );
-    Overlay.of(context).insert(_settingsOverlay!);
-  }
+  // void _showSettingsMenu(BuildContext context) {
+  //   _settingsOverlay?.remove();
+  //   _settingsOverlay = null;
+  //   _settingsOverlay = OverlayEntry(
+  //     builder: (_) => SettingsMenuPopup(
+  //       onClose: () {
+  //         _settingsOverlay?.remove();
+  //         _settingsOverlay = null;
+  //       },
+  //     ),
+  //   );
+  //   Overlay.of(context).insert(_settingsOverlay!);
+  // }
 
   // ================================================================
   // SHOP BUTTON
