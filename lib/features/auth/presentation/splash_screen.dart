@@ -18,6 +18,7 @@ class SplashScreen extends StatelessWidget {
         children: [
           // Full-bleed splash background — falls back to a sky blue if the
           // asset is unavailable (errorBuilder pattern used across the app).
+          // BoxFit.cover: correct per per-type rules for full-screen backgrounds.
           Image.asset(
             'assets/screens/splash_screen_background.png',
             fit: BoxFit.cover,
@@ -31,25 +32,39 @@ class SplashScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // "Soul Garden" wordmark logo — title is baked into the asset.
-                Image.asset(
-                  'assets/ui_icons/icons/app_icon_@3x.png',
-                  width: 240,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Text(
-                    'Soul Garden',
-                    style: GoogleFonts.quintessential(
-                      fontSize: 34,
-                      color: const Color(0xFF2F6B2E),
-                      shadows: const [
-                        Shadow(
-                          color: Color(0x55000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+                // "Soul Garden" wordmark logo — scales with the available
+                // band width so it looks correct on both narrow phones
+                // (375 px) and the 500 px band on wide screens.
+                // LayoutBuilder reads the constrained band width rather than
+                // the raw window width, giving correct sizing in all modes.
+                // 0.55 * 375 ≈ 206; 0.55 * 430 ≈ 236; clamp guards extremes.
+                // BoxFit.contain: correct per per-type rules for logos/icons.
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final logoWidth =
+                        (constraints.maxWidth * 0.55).clamp(160.0, 280.0);
+                    return SizedBox(
+                      width: logoWidth,
+                      child: Image.asset(
+                        'assets/ui_icons/icons/app_icon_@3x.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => Text(
+                          'Soul Garden',
+                          style: GoogleFonts.quintessential(
+                            fontSize: 34,
+                            color: const Color(0xFF2F6B2E),
+                            shadows: const [
+                              Shadow(
+                                color: Color(0x55000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 36),
@@ -60,7 +75,8 @@ class SplashScreen extends StatelessWidget {
                   height: 30,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.6,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3E7D3A)),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF3E7D3A)),
                   ),
                 ),
               ],
