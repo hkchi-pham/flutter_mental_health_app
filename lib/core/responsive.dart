@@ -5,18 +5,22 @@
 ///   tablet — 600 px ≤ width ≤ 1024 px
 ///   desktop— width > 1024 px
 ///
-/// [kMaxContentWidth] is the single source of truth for the app-wide content
-/// cap. Any widget that needs to know the band width reads this constant; the
-/// actual clamping happens in the [MaterialApp.builder] shell in main.dart.
+/// Responsiveness is **per-screen**, not app-wide:
+///   • Full-bleed screens (garden, splash, auth backgrounds) render edge-to-edge
+///     and scale via `BoxFit.cover` / percentage layout. They must NOT be width
+///     capped — the garden background, in particular, must fill 100% of the
+///     window width or its grid/items desync from the visible area.
+///   • Width-limited screens (chat, journal, shop, settings forms) opt in by
+///     wrapping their body in [MaxWidthBox], which centers + caps at
+///     [kMaxContentWidth].
 library;
 
 import 'package:flutter/widgets.dart';
 
-/// Maximum width of the centered content band on wide screens.
+/// Maximum width of a *width-limited* screen's content on wide windows.
 ///
-/// Below this threshold the app fills the screen exactly as it did before the
-/// shell was added (ConstrainedBox does not bite). Above it the content is
-/// letterboxed within a calm garden-palette side band.
+/// Applied only by [MaxWidthBox] on screens that opt in (chat, journal, shop,
+/// settings). Full-bleed screens ignore this entirely.
 const double kMaxContentWidth = 500.0;
 
 /// Coarse screen-size classification derived from the window width.
@@ -40,13 +44,12 @@ ScreenSize classifyWidth(double width) {
 
 /// [BuildContext] extensions for responsive queries.
 ///
-/// **Important:** [screenWidth] and [screenHeight] read the raw [MediaQuery]
-/// window size — i.e. the full OS window, not the constrained 500 px band.
-/// This is intentional for *breakpoint queries* (is this a phone? a tablet?).
-/// For layout math that must respect the 500 px band, use [LayoutBuilder] or
-/// [BoxConstraints.maxWidth] inside the shell widget.
+/// [screenWidth]/[screenHeight] read the raw [MediaQuery] window size — the
+/// full OS window. Full-bleed screens use this directly for percentage layout.
+/// Width-limited content lives inside a [MaxWidthBox]; use [LayoutBuilder] /
+/// [BoxConstraints.maxWidth] there if you need the capped band width.
 extension ResponsiveContext on BuildContext {
-  /// Raw window width from [MediaQuery] (not the constrained band width).
+  /// Raw window width from [MediaQuery] (the full OS window).
   double get screenWidth => MediaQuery.of(this).size.width;
 
   /// Raw window height from [MediaQuery].
@@ -83,5 +86,42 @@ extension ResponsiveContext on BuildContext {
       case ScreenSize.phone:
         return phone;
     }
+  }
+}
+
+/// Centers [child] and caps its width at [maxWidth] (default [kMaxContentWidth]).
+///
+/// Use this to wrap the body of *width-limited* screens — chat, journal, shop,
+/// settings — whose content should stay compact and not stretch across wide
+/// tablet/desktop windows. On narrow phones the cap does not bite, so the
+/// content fills the width exactly as before.
+///
+/// **Do not** use this on full-bleed screens (garden, splash, auth
+/// backgrounds): those must render edge-to-edge.
+///
+/// ```dart
+/// Scaffold(body: MaxWidthBox(child: JournalView()));
+/// ```
+class MaxWidthBox extends StatelessWidget {
+  const MaxWidthBox({
+    super.key,
+    required this.child,
+    this.maxWidth = kMaxContentWidth,
+  });
+
+  /// The width-limited content.
+  final Widget child;
+
+  /// The maximum width the content is allowed to grow to.
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: child,
+      ),
+    );
   }
 }

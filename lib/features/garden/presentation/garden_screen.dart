@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,7 +9,6 @@ import 'widgets/level_up_overlay.dart';
 import 'widgets/xp_toast_overlay.dart';
 import 'widgets/tree_death_toast_overlay.dart';
 import 'widgets/badge_popup.dart';
-import '../../../../core/responsive.dart';
 // TEMP(Phase 10): restore with the settings menu when its tab is built.
 // import '../../auth/presentation/widgets/settings_menu_popup.dart';
 
@@ -207,13 +204,14 @@ class _GardenScreenState extends State<GardenScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Use the constrained band width (== 500 on wide screens, full width on
-        // phones). Guard against an unbounded LayoutBuilder in case the widget is
-        // ever placed outside the shell's ConstrainedBox.
-        final bandWidth = constraints.maxWidth.isFinite
+        // Garden is full-bleed: use the full available width (== window width,
+        // since no ConstrainedBox sits above this screen). Wider windows (tablet/
+        // desktop) get a wider garden; items stay positioned by fraction of
+        // bgWidth, and the background uses BoxFit.cover, so it scales cleanly.
+        final fullWidth = constraints.maxWidth.isFinite
             ? constraints.maxWidth
-            : math.min(MediaQuery.of(context).size.width, kMaxContentWidth);
-        final bgWidth = bandWidth * 2.0; // KEEP the existing ×2 horizontal-scroll logic
+            : MediaQuery.of(context).size.width;
+        final bgWidth = fullWidth * 2.0; // KEEP the existing ×2 horizontal-scroll logic
         final isPlacing = _placingTree != null || _placingDeco != null;
 
         return SingleChildScrollView(
@@ -991,13 +989,10 @@ class _GardenScreenState extends State<GardenScreen> {
     _xpToastOverlay?.remove();
     _xpToastOverlay = null;
 
-    // Clamp to the visible 500 px band and offset by its left edge so the
-    // toast appears over the centered content on wide screens.
+    // Garden is full-bleed — position relative to the full window width.
     final windowW = MediaQuery.of(context).size.width;
-    final bandW = math.min(windowW, kMaxContentWidth);
-    final bandLeft = math.max(0.0, (windowW - bandW) / 2);
     // Position near the XP chip in the top bar (second chip, roughly centred)
-    final pos = Offset(bandLeft + bandW * 0.35, 60.0);
+    final pos = Offset(windowW * 0.35, 60.0);
 
     _xpToastOverlay = OverlayEntry(
       builder: (_) => XpToastOverlay(
@@ -1061,15 +1056,12 @@ class _GardenScreenState extends State<GardenScreen> {
     _deathToastOverlay?.remove();
     _deathToastOverlay = null;
 
-    // Clamp to the visible 500 px band and offset by its left edge so the
-    // toast appears over the centered content on wide screens.
+    // Garden is full-bleed — position relative to the full window width.
     final windowW = MediaQuery.of(context).size.width;
-    final bandW = math.min(windowW, kMaxContentWidth);
-    final bandLeft = math.max(0.0, (windowW - bandW) / 2);
     // Centred horizontally, just below the top bar. Sits slightly lower and
     // further to the centre than the XP toast (0.35 of width @ y=60) so the
     // two toasts don't visually collide if both fire in close succession.
-    final position = Offset(bandLeft + bandW * 0.5 - 80, 70);
+    final position = Offset(windowW * 0.5 - 80, 70);
 
     final entry = OverlayEntry(
       builder: (_) => TreeDeathToastOverlay(
