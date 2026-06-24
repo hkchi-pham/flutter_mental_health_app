@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/responsive.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/data/auth_session.dart';
 import 'features/auth/data/token_store.dart';
@@ -111,6 +112,22 @@ class MyApp extends StatelessWidget {
               ColorScheme.fromSeed(seedColor: const Color(0xFF6B8E5A)),
           useMaterial3: true,
         ),
+        // App-wide responsive shell: centers content + caps width at 500 px on
+        // wide screens (tablet / desktop / web). Below 500 px the
+        // ConstrainedBox does not bite, so phone rendering is identical to
+        // before this shell was added. The seed-green ColoredBox fills the
+        // side band so wide windows look intentional, not broken/white.
+        builder: (context, child) {
+          return ColoredBox(
+            color: const Color(0xFF6B8E5A), // seed green side band
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: kMaxContentWidth),
+                child: child ?? const SizedBox.shrink(),
+              ),
+            ),
+          );
+        },
         // AuthGate handles splash → login/register → garden routing.
         home: const AuthGate(),
       ),
