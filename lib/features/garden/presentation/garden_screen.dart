@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart' hide Badge;
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +11,7 @@ import 'widgets/level_up_overlay.dart';
 import 'widgets/xp_toast_overlay.dart';
 import 'widgets/tree_death_toast_overlay.dart';
 import 'widgets/badge_popup.dart';
+import '../../../../core/responsive.dart';
 // TEMP(Phase 10): restore with the settings menu when its tab is built.
 // import '../../auth/presentation/widgets/settings_menu_popup.dart';
 
@@ -199,50 +202,61 @@ class _GardenScreenState extends State<GardenScreen> {
   // SCROLLABLE GARDEN: background + grid items + grid overlay
   // ================================================================
   Widget _buildScrollableGarden(GardenState state, GardenProvider provider) {
+    // Height is not constrained by the band — keep raw MediaQuery height.
     final screenH = MediaQuery.of(context).size.height;
-    final screenW = MediaQuery.of(context).size.width;
-    final bgWidth = screenW * 2.0;
-    final isPlacing = _placingTree != null || _placingDeco != null;
 
-    return SingleChildScrollView(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: bgWidth,
-          height: screenH,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Background
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/screens/garden_background_screen.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFFBED2BA), Color(0xFF8DAF9B)],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use the constrained band width (== 500 on wide screens, full width on
+        // phones). Guard against an unbounded LayoutBuilder in case the widget is
+        // ever placed outside the shell's ConstrainedBox.
+        final bandWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : math.min(MediaQuery.of(context).size.width, kMaxContentWidth);
+        final bgWidth = bandWidth * 2.0; // KEEP the existing ×2 horizontal-scroll logic
+        final isPlacing = _placingTree != null || _placingDeco != null;
+
+        return SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: bgWidth,
+            height: screenH,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Background
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/screens/garden_background_screen.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFBED2BA), Color(0xFF8DAF9B)],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              // All placed items merged and sorted by row (back-to-front)
-              ..._buildPlacedItems(state, bgWidth, screenH, provider),
+                // All placed items merged and sorted by row (back-to-front)
+                ..._buildPlacedItems(state, bgWidth, screenH, provider),
 
-              // Grid overlay ON TOP of trees so taps aren't blocked by transparent areas
-              if (isPlacing)
-                ..._buildGridOverlay(state, bgWidth, screenH, provider),
+                // Grid overlay ON TOP of trees so taps aren't blocked by transparent areas
+                if (isPlacing)
+                  ..._buildGridOverlay(state, bgWidth, screenH, provider),
 
-              // Preview item (staged after valid-cell release, before confirm)
-              if (_previewRow != null && _previewCol != null)
-                _buildPreviewItem(_previewRow!, _previewCol!, bgWidth, screenH),
-            ],
+                // Preview item (staged after valid-cell release, before confirm)
+                if (_previewRow != null && _previewCol != null)
+                  _buildPreviewItem(_previewRow!, _previewCol!, bgWidth, screenH),
+              ],
+            ),
           ),
-        ),
+        );
+      },
     );
   }
 
@@ -977,9 +991,13 @@ class _GardenScreenState extends State<GardenScreen> {
     _xpToastOverlay?.remove();
     _xpToastOverlay = null;
 
-    final screenW = MediaQuery.of(context).size.width;
+    // Clamp to the visible 500 px band and offset by its left edge so the
+    // toast appears over the centered content on wide screens.
+    final windowW = MediaQuery.of(context).size.width;
+    final bandW = math.min(windowW, kMaxContentWidth);
+    final bandLeft = math.max(0.0, (windowW - bandW) / 2);
     // Position near the XP chip in the top bar (second chip, roughly centred)
-    final pos = Offset(screenW * 0.35, 60.0);
+    final pos = Offset(bandLeft + bandW * 0.35, 60.0);
 
     _xpToastOverlay = OverlayEntry(
       builder: (_) => XpToastOverlay(
@@ -1043,11 +1061,15 @@ class _GardenScreenState extends State<GardenScreen> {
     _deathToastOverlay?.remove();
     _deathToastOverlay = null;
 
-    final screenW = MediaQuery.of(context).size.width;
+    // Clamp to the visible 500 px band and offset by its left edge so the
+    // toast appears over the centered content on wide screens.
+    final windowW = MediaQuery.of(context).size.width;
+    final bandW = math.min(windowW, kMaxContentWidth);
+    final bandLeft = math.max(0.0, (windowW - bandW) / 2);
     // Centred horizontally, just below the top bar. Sits slightly lower and
     // further to the centre than the XP toast (0.35 of width @ y=60) so the
     // two toasts don't visually collide if both fire in close succession.
-    final position = Offset(screenW * 0.5 - 80, 70);
+    final position = Offset(bandLeft + bandW * 0.5 - 80, 70);
 
     final entry = OverlayEntry(
       builder: (_) => TreeDeathToastOverlay(
