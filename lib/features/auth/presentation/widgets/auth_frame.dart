@@ -87,20 +87,32 @@ class _AuthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // "Soul Garden" wordmark logo — title is baked into the asset.
-    return Image.asset(
-      'assets/ui_icons/icons/app_icon_@3x.png',
-      width: 200,
-      fit: BoxFit.contain,
-      errorBuilder: (_, _, _) => Text(
-        'Soul Garden',
-        style: GoogleFonts.quintessential(
-          fontSize: 28,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF2F6B2E),
-          letterSpacing: 0.5,
-        ),
-      ),
+    // "Soul Garden" wordmark logo — scales with available band width so it
+    // looks correct on narrow phones (375 px) and the 500 px band on wide
+    // screens.  LayoutBuilder reads the constrained width (not raw window).
+    // 0.50 * 375 = 187 px; 0.50 * 500 = 250 px → clamped to 220 px max.
+    // BoxFit.contain: correct per per-type rules for logos/icons.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final logoWidth =
+            (constraints.maxWidth * 0.50).clamp(150.0, 220.0);
+        return SizedBox(
+          width: logoWidth,
+          child: Image.asset(
+            'assets/ui_icons/icons/app_icon_@3x.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => Text(
+              'Soul Garden',
+              style: GoogleFonts.quintessential(
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2F6B2E),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -144,10 +156,13 @@ class _FramedPanel extends StatelessWidget {
       alignment: Alignment.topCenter,
       children: [
         // PNG frame — errorBuilder: cream rounded container with border.
+        // BoxFit.contain: correct per per-type rules for frame/card assets
+        // (preserves aspect ratio; auth_frame_@3x.png is classified as a
+        // frame/card, not a full-screen background or button).
         Positioned.fill(
           child: Image.asset(
             'assets/ui_icons/frames/auth_frame_@3x.png',
-            fit: BoxFit.fill,
+            fit: BoxFit.contain,
             errorBuilder: (_, _, _) => Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFFCFBF5),
