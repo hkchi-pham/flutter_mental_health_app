@@ -31,7 +31,7 @@ const Map<TreeType, double> treeLargeHeightFrac = {
   TreeType.sakura:  0.80, // Large flowering tree — ~3x gate height
   TreeType.peace:   0.75, // Tall spreading tree
   TreeType.lantern: 0.65, // Ornamental lantern tree
-  TreeType.hope:    0.50, // Sunflower — medium height
+  TreeType.hope:    0.32, // Sunflower — short ground flower, well below the trees
   TreeType.lotus:   0.30, // Lotus — low ground plant
 };
 
