@@ -32,7 +32,7 @@ const Map<TreeType, double> treeLargeHeightFrac = {
   TreeType.peace:   0.75, // Tall spreading tree
   TreeType.lantern: 0.65, // Ornamental lantern tree
   TreeType.hope:    0.32, // Sunflower — short ground flower, well below the trees
-  TreeType.lotus:   0.30, // Lotus — low ground plant
+  TreeType.lotus:   0.22, // Lotus — low water plant, smaller than hope at every stage
 };
 
 /// Stage multiplier relative to the large size.
