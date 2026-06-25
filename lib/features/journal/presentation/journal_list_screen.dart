@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/responsive.dart';
 import '../data/models/notebook.dart';
 import '../logic/journal_provider.dart';
+import 'notebook_page_screen.dart';
 import 'widgets/notebook_cover.dart';
 import 'widgets/notebook_form_dialog.dart';
 
@@ -146,15 +147,19 @@ class _JournalListScreenState extends State<JournalListScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // Open a notebook (placeholder editor — Plan 11-05 wires the real one)
+  // Open a notebook (the real notebook page editor)
   // ---------------------------------------------------------------------------
 
-  void _openNotebook(Notebook nb) {
-    Navigator.of(context).push(
+  Future<void> _openNotebook(Notebook nb) async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _PlaceholderNotebookScreen(notebook: nb),
+        builder: (_) => NotebookPageScreen(notebook: nb),
       ),
     );
+    // On return, re-sort so the list re-orders newest-first by last-written
+    // (the editor mutates the provider directly; refresh re-derives ordering).
+    if (!mounted) return;
+    context.read<JournalProvider>().refresh();
   }
 
   // ---------------------------------------------------------------------------
@@ -328,44 +333,6 @@ class _JournalListScreenState extends State<JournalListScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Temporary stand-in for the notebook page editor.
-///
-/// Plan 11-05 replaces the push target in [_JournalListScreenState._openNotebook]
-/// with the real `NotebookPageScreen(notebook: nb)`.
-class _PlaceholderNotebookScreen extends StatelessWidget {
-  const _PlaceholderNotebookScreen({required this.notebook});
-
-  final Notebook notebook;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8E7),
-      appBar: AppBar(
-        title: Text(
-          notebook.title,
-          style: GoogleFonts.quintessential(),
-        ),
-        backgroundColor: notebookColorOf(notebook.color),
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            '${notebook.emoji}\n\nTrang nhật ký sẽ có ở bản cập nhật sau.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(
-              fontSize: 16,
-              color: const Color(0xFF6B5A45),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
