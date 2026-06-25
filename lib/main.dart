@@ -15,6 +15,11 @@ import 'features/garden/data/remote/garden_item_remote_data_source.dart';
 import 'features/garden/data/remote/garden_user_remote_data_source.dart';
 import 'features/garden/data/sync/sync_coordinator.dart';
 import 'features/garden/logic/garden_provider.dart';
+import 'features/journal/data/cache/journal_cache_store.dart';
+import 'features/journal/data/cache/journal_change_queue.dart';
+import 'features/journal/data/journal_repository.dart';
+import 'features/journal/data/remote/journal_remote_data_source.dart';
+import 'features/journal/logic/journal_provider.dart';
 import 'features/shared/config/app_config.dart';
 import 'features/shared/network/api_client.dart';
 
@@ -101,6 +106,28 @@ class MyApp extends StatelessWidget {
               GardenProvider(repository: ctx.read<GardenRepository>()),
           update: (_, repo, prev) =>
               prev ?? GardenProvider(repository: repo),
+        ),
+
+        // ── Journal layer (Phase 11) ────────────────────────────────────────
+        //
+        // Offline-first journal data layer mirroring the garden template:
+        // JournalRepository (cache-first read, optimistic writes, offline queue)
+        // sits behind a JournalProvider ChangeNotifier the journal screens watch.
+        // Reads ApiClient + AuthSession already provided above.
+        Provider<JournalRepository>(
+          create: (ctx) => JournalRepository(
+            remote: JournalRemoteDataSource(ctx.read<ApiClient>()),
+            cache: JournalCacheStore(),
+            queue: JournalChangeQueue(),
+            session: ctx.read<AuthSession>(),
+          ),
+        ),
+
+        ChangeNotifierProxyProvider<JournalRepository, JournalProvider>(
+          create: (ctx) =>
+              JournalProvider(repository: ctx.read<JournalRepository>()),
+          update: (_, repo, prev) =>
+              prev ?? JournalProvider(repository: repo),
         ),
       ],
       child: MaterialApp(

@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../data/auth_repository.dart';
 import '../data/auth_session.dart';
-import '../../garden/presentation/garden_screen.dart';
 import '../../shared/network/api_client.dart';
+import '../../shared/presentation/app_shell.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'splash_screen.dart';
@@ -20,8 +20,8 @@ enum _Phase { restoring, ready }
 ///
 /// Responsibilities:
 ///   1. Show [SplashScreen] during the async token restore (cold-launch).
-///   2. Switch between [LoginScreen]/[RegisterScreen] and [GardenScreen] based
-///      on [AuthSession.isAuthenticated].
+///   2. Switch between [LoginScreen]/[RegisterScreen] and [AppShell] (the
+///      4-tab post-login surface) based on [AuthSession.isAuthenticated].
 ///   3. Wire [ApiClient.onUnauthorized] so any 401 from any API call clears the
 ///      session and returns the user to the login screen with a one-shot
 ///      "Session expired — please log in again" inline message.
@@ -108,7 +108,7 @@ class _AuthGateState extends State<AuthGate> {
       // Clear transient flags so a subsequent logout + re-login starts fresh.
       _sessionExpired = false;
       _showRegister = false;
-      return const GardenScreen();
+      return const AppShell();
     }
 
     // ── Unauthenticated — login or register ───────────────────────────────────
