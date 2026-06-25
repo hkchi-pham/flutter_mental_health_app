@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../data/auth_repository.dart';
 import '../../../features/shared/network/api_client.dart';
 import 'widgets/auth_button.dart';
-import 'widgets/auth_frame.dart';
+import 'widgets/auth_scaffold.dart';
 import 'widgets/auth_text_field.dart';
 
 /// Register screen — collects fullname, user_name, phone, password,
@@ -144,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthFrame(
+    return AuthScaffold(
       title: 'Create your garden',
       onBack: widget.onLoginTap,
       child: Column(
