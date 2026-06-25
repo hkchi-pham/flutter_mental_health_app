@@ -31,15 +31,22 @@ class _C {
 // diamondW = column spacing, diamondH = 2 * row spacing.
 // Row Y positions and column X positions are derived from the grid bounds.
 
-/// Garden background image aspect ratio (width / height).
+/// Garden background image intrinsic size (px). The panorama width is derived
+/// from this ratio so the image keeps its proportions at height = screenHeight,
+/// and the grid is mapped through the BoxFit.cover transform so it tracks the
+/// grass in the artwork on every aspect ratio.
 /// Source asset: assets/screens/garden_background_screen.png — 3258 × 1930.
-/// The panorama width is derived from this so the image keeps its proportions
-/// at height = screenHeight (no stretching, grid stays aligned to the art).
-const double _gardenImageRatio = 3258.0 / 1930.0; // ≈ 1.688
+const double _imgW = 3258.0;
+const double _imgH = 1930.0;
+const double _gardenImageRatio = _imgW / _imgH; // ≈ 1.688
 
-/// Grid vertical bounds (fraction of screen/bg height) — the grass band.
-const double _gridTopY = 0.55;
-const double _gridBottomY = 0.95;
+/// Grid vertical bounds as a fraction of the **image** height — the grass band
+/// in front of the fence (fence rail ≈ 0.62; open foreground grass ≈ 0.72 down
+/// to the bottom). Mapped to screen pixels via the cover transform in
+/// [_GardenScreenState._imgYToPx], so the grid stays on the grass regardless of
+/// window aspect ratio / cover crop.
+const double _gridTopY = 0.72;
+const double _gridBottomY = 0.96;
 
 /// Horizontal padding from each edge (fraction of bgWidth) — grass spans full width.
 const double _gridPadLeft = 0.0;
@@ -285,7 +292,7 @@ class _GardenScreenState extends State<GardenScreen> {
     }
 
     final cx = _colCenterX(col, bgW, row: row);
-    final cy = _rowCenterYpx(row, bgH);
+    final cy = _rowCenterYpx(row, bgW, bgH);
 
     // Anchor base at cell center
     final double anchorY;
@@ -351,9 +358,28 @@ class _GardenScreenState extends State<GardenScreen> {
   double _diamondW(double bgW) =>
       bgW * (1 - _gridPadLeft - _gridPadRight) / (gardenCols - 1);
 
-  /// Diamond height (vertical diagonal) in pixels.
-  double _diamondH(double bgH) =>
-      2 * bgH * (_gridBottomY - _gridTopY) / (gardenRows - 1);
+  /// Displayed image height (px) under BoxFit.cover for a [bgW]×[bgH] box.
+  /// On wide windows the image is scaled to fill width, so it renders taller
+  /// than the box and is cropped top/bottom — this returns that scaled height.
+  double _coverDispH(double bgW, double bgH) {
+    final scaleW = bgW / _imgW;
+    final scaleH = bgH / _imgH;
+    final coverScale = scaleW > scaleH ? scaleW : scaleH;
+    return _imgH * coverScale;
+  }
+
+  /// Maps an image-space Y fraction to an on-screen pixel Y, accounting for the
+  /// BoxFit.cover vertical crop so the grid and items track the grass in the
+  /// artwork regardless of window aspect ratio.
+  double _imgYToPx(double fy, double bgW, double bgH) {
+    final dispH = _coverDispH(bgW, bgH);
+    final top = (bgH - dispH) / 2; // ≤ 0 when the image is cropped top/bottom
+    return top + fy * dispH;
+  }
+
+  /// Diamond height (vertical diagonal) in pixels — in displayed-image space.
+  double _diamondH(double bgW, double bgH) =>
+      2 * _coverDispH(bgW, bgH) * (_gridBottomY - _gridTopY) / (gardenRows - 1);
 
   /// Returns the center X position for a column in the grid.
   /// Odd rows are staggered by half a diamond width.
@@ -364,10 +390,12 @@ class _GardenScreenState extends State<GardenScreen> {
     return startX + stagger + col * w;
   }
 
-  /// Returns the center Y position for a row (uniform spacing).
-  double _rowCenterYpx(int row, double bgH) {
+  /// Returns the center Y position for a row, mapped through the cover transform
+  /// so it lands on the grass band of the artwork.
+  double _rowCenterYpx(int row, double bgW, double bgH) {
     final r = row.clamp(0, gardenRows - 1);
-    return bgH * (_gridTopY + r * (_gridBottomY - _gridTopY) / (gardenRows - 1));
+    final fy = _gridTopY + r * (_gridBottomY - _gridTopY) / (gardenRows - 1);
+    return _imgYToPx(fy, bgW, bgH);
   }
 
   /// Returns the display height for a tree using the per-type config
@@ -397,7 +425,7 @@ class _GardenScreenState extends State<GardenScreen> {
 
   /// Returns (halfW, halfH) — uniform diamond half-diagonals for perfect tiling.
   (double, double) _diamondHalfSize(double bgW, double bgH) {
-    return (_diamondW(bgW) / 2, _diamondH(bgH) / 2);
+    return (_diamondW(bgW) / 2, _diamondH(bgW, bgH) / 2);
   }
 
   List<Widget> _buildGridOverlay(GardenState state, double bgW, double bgH, GardenProvider provider) {
@@ -415,7 +443,7 @@ class _GardenScreenState extends State<GardenScreen> {
       for (int c = 0; c < cols; c++) {
         final occupied = state.isCellOccupied(r, c);
         final cx = _colCenterX(c, bgW, row: r);
-        final cy = _rowCenterYpx(r, bgH);
+        final cy = _rowCenterYpx(r, bgW, bgH);
 
         final fillColor = occupied
             ? Colors.red.withAlpha(40)
@@ -470,7 +498,7 @@ class _GardenScreenState extends State<GardenScreen> {
       final cols = colsForRow(r);
       for (int c = cols - 1; c >= 0; c--) {
         final cx = _colCenterX(c, bgW, row: r);
-        final cy = _rowCenterYpx(r, bgH);
+        final cy = _rowCenterYpx(r, bgW, bgH);
         final dx = (localPos.dx - cx).abs();
         final dy = (localPos.dy - cy).abs();
         if (dx / halfW + dy / halfH <= 1.0) {
@@ -503,7 +531,7 @@ class _GardenScreenState extends State<GardenScreen> {
       final h = _treeSizeForLevelAndRow(tree.type, tree.level, tree.row, screenH);
       final w = treeDisplayWidth(tree.type, tree.level, h);
       final cx = _colCenterX(tree.col, bgW, row: tree.row);
-      final cy = _rowCenterYpx(tree.row, bgH);
+      final cy = _rowCenterYpx(tree.row, bgW, bgH);
       final anchorY = trunkBaseY(tree.type, tree.level);
 
       items.add((tree.row, Positioned(
@@ -533,7 +561,7 @@ class _GardenScreenState extends State<GardenScreen> {
       final h = _decoSizeForRow(deco.type, deco.row, screenH);
       final w = decoDisplayWidth(deco.type, h);
       final cx = _colCenterX(deco.col, bgW, row: deco.row);
-      final cy = _rowCenterYpx(deco.row, bgH);
+      final cy = _rowCenterYpx(deco.row, bgW, bgH);
       final baseY = decoBaseY(deco.type);
 
       items.add((deco.row, Positioned(
