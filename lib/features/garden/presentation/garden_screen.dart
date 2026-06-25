@@ -31,13 +31,19 @@ class _C {
 // diamondW = column spacing, diamondH = 2 * row spacing.
 // Row Y positions and column X positions are derived from the grid bounds.
 
-/// Grid vertical bounds (fraction of bgHeight)
-const double _gridTopY = 0.68;
-const double _gridBottomY = 0.93;
+/// Garden background image aspect ratio (width / height).
+/// Source asset: assets/screens/garden_background_screen.png — 3258 × 1930.
+/// The panorama width is derived from this so the image keeps its proportions
+/// at height = screenHeight (no stretching, grid stays aligned to the art).
+const double _gardenImageRatio = 3258.0 / 1930.0; // ≈ 1.688
 
-/// Horizontal padding from each edge (fraction of bgWidth)
-const double _gridPadLeft = 0.04;
-const double _gridPadRight = 0.04;
+/// Grid vertical bounds (fraction of screen/bg height) — the grass band.
+const double _gridTopY = 0.55;
+const double _gridBottomY = 0.95;
+
+/// Horizontal padding from each edge (fraction of bgWidth) — grass spans full width.
+const double _gridPadLeft = 0.0;
+const double _gridPadRight = 0.0;
 
 /// Perspective scale per row (for tree/decoration sizing, NOT grid cell size)
 List<double> get _rowScale {
@@ -204,14 +210,18 @@ class _GardenScreenState extends State<GardenScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Garden is full-bleed: use the full available width (== window width,
-        // since no ConstrainedBox sits above this screen). Wider windows (tablet/
-        // desktop) get a wider garden; items stay positioned by fraction of
-        // bgWidth, and the background uses BoxFit.cover, so it scales cleanly.
-        final fullWidth = constraints.maxWidth.isFinite
+        // Garden is full-bleed. Width is driven by the background image aspect
+        // ratio so the panorama keeps its proportions at height = screenH:
+        //   naturalWidth = screenH * imageRatio
+        // On a very wide window the natural width can be narrower than the
+        // window — clamp up to the window width so the garden still fills the
+        // screen edge-to-edge (no gap) and simply doesn't scroll. Items are
+        // positioned by fraction of bgWidth, so they rescale automatically.
+        final screenW = constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : MediaQuery.of(context).size.width;
-        final bgWidth = fullWidth * 2.0; // KEEP the existing ×2 horizontal-scroll logic
+        final naturalWidth = screenH * _gardenImageRatio;
+        final bgWidth = naturalWidth > screenW ? naturalWidth : screenW;
         final isPlacing = _placingTree != null || _placingDeco != null;
 
         return SingleChildScrollView(
