@@ -86,11 +86,17 @@ class _AppShellState extends State<AppShell> {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
+        // Bound the bar height. Without a fixed height the bottomNavigationBar
+        // slot hands its child a loose full-screen constraint, and the per-item
+        // `Center` (an Align) expands to that max height — inflating the bar to
+        // fill the whole screen and squeezing the body to nothing.
+        child: SizedBox(
+          height: 62,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
               _navItem(
                 index: 0,
                 asset: 'assets/ui_icons/icons/garden_btn_@3x.png',
@@ -115,7 +121,8 @@ class _AppShellState extends State<AppShell> {
                 fallback: Icons.person_outline,
                 enabled: false,
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
