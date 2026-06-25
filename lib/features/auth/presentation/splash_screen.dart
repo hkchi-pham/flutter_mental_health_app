@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/screen_background.dart';
+
 /// Branded loading screen shown during the cold-launch token restore.
 ///
 /// Displays the dedicated splash background, the "Soul Garden" wordmark logo
@@ -13,22 +15,12 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Full-bleed splash background — falls back to a sky blue if the
-          // asset is unavailable (errorBuilder pattern used across the app).
-          // BoxFit.cover: correct per per-type rules for full-screen backgrounds.
-          Image.asset(
-            'assets/screens/splash_screen_background.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const ColoredBox(
-              color: Color(0xFF8FC0E8),
-            ),
-          ),
-
-          // Centred branding column
-          Center(
+      // Full-bleed splash background — full-screen BoxFit.cover via the shared
+      // ScreenBackground pattern; falls back to sky blue if the asset is missing.
+      body: ScreenBackground(
+        asset: 'assets/screens/splash_screen_background.png',
+        fallbackColor: const Color(0xFF8FC0E8),
+        child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -82,8 +74,7 @@ class SplashScreen extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
   }
 }

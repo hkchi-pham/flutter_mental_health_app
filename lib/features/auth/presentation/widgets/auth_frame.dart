@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/screen_background.dart';
+
 /// Full-screen auth scaffold that wraps any form child in the branded
 /// PNG-frame aesthetic used throughout Soul Garden (info popup, badge popup).
 ///
@@ -30,49 +32,46 @@ class AuthFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. Full-bleed background
-          Image.asset(
-            'assets/screens/auth_screen_background.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(
-              color: const Color(0xFF6B8E5A),
-            ),
-          ),
-
-          // 2. Scrollable content — keyboard-safe
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 3. Branded header
-                  const _AuthHeader(),
-                  const SizedBox(height: 20),
-
-                  // 4. Framed form panel
-                  _FramedPanel(title: title, child: child),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-
-          // Optional back button (register → login)
-          if (onBack != null)
+      // 1. Full-bleed background — full-screen BoxFit.cover via the shared
+      //    ScreenBackground pattern; falls back to solid green if asset missing.
+      body: ScreenBackground(
+        asset: 'assets/screens/auth_screen_background.png',
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 2. Scrollable content — keyboard-safe
             SafeArea(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10, top: 4),
-                  child: _BackButton(onTap: onBack!),
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 3. Branded header
+                    const _AuthHeader(),
+                    const SizedBox(height: 20),
+
+                    // 4. Framed form panel
+                    _FramedPanel(title: title, child: child),
+                    const SizedBox(height: 32),
+                  ],
                 ),
               ),
             ),
-        ],
+
+            // Optional back button (register → login)
+            if (onBack != null)
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 10, top: 4),
+                    child: _BackButton(onTap: onBack!),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
