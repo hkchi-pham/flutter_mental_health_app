@@ -140,18 +140,18 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
         );
         final updated = await provider.addEntry(nb, entry);
         if (!mounted) return;
-        garden.onJournalEntryAdded();
+        // XP = 1 point per word (not per letter, not a flat bonus).
         final wordCount = text
             .trim()
             .split(RegExp(r'\s+'))
             .where((w) => w.isNotEmpty)
             .length;
-        garden.onJournalEntryWithWordCount(wordCount);
+        garden.addPoints(wordCount);
         setState(() {
           _notebook = updated;
           _writing = false;
         });
-        _toast('+XP cho khu vườn 🌱');
+        _toast('+$wordCount XP cho khu vườn 🌱');
       }
     } catch (e) {
       // Surface failures instead of silently swallowing them (the input box's
