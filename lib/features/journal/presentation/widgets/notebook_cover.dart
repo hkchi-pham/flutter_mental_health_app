@@ -48,7 +48,7 @@ class NotebookCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = notebookColorOf(notebook.color);
-    final dateLabel = DateFormat('d MMM yyyy').format(notebook.lastWritten);
+    final dateLabel = DateFormat('d MMM yyyy').format(notebook.createdAt);
     final isPrivate = notebook.visibility == NotebookVisibility.private_;
 
     return GestureDetector(

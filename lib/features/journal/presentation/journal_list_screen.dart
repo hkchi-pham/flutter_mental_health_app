@@ -253,59 +253,110 @@ class _JournalListScreenState extends State<JournalListScreen> {
           return _buildEmptyState();
         }
 
-        return RefreshIndicator(
-          color: const Color(0xFF6B8E5A),
-          onRefresh: provider.refresh,
-          child: ListView.builder(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            itemCount: notebooks.length + (provider.loadingMore ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= notebooks.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Color(0xFF6B8E5A),
-                      ),
-                    ),
-                  ),
-                );
-              }
+        // Responsive: phones get a single-column vertical list (with swipe-to-
+        // delete); tablets/desktops get a multi-column grid so covers keep a
+        // sensible size instead of stretching across the whole window. Either
+        // way it scrolls when the notebooks overflow the screen.
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final columns = width < 600 ? 1 : (width <= 1024 ? 2 : 3);
+            return RefreshIndicator(
+              color: const Color(0xFF6B8E5A),
+              onRefresh: provider.refresh,
+              child: columns == 1
+                  ? _buildListView(provider, notebooks)
+                  : _buildGridView(provider, notebooks, columns),
+            );
+          },
+        );
+      },
+    );
+  }
 
-              final nb = notebooks[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Dismissible(
-                  key: ValueKey(nb.id),
-                  direction: DismissDirection.endToStart,
-                  confirmDismiss: (_) => _confirmDelete(nb),
-                  onDismissed: (_) => provider.delete(nb.id),
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 28),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFC0392B).withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.delete_outline,
-                        color: Colors.white, size: 30),
-                  ),
-                  child: NotebookCover(
-                    notebook: nb,
-                    onTap: () => _openNotebook(nb),
-                  ),
-                ),
-              );
-            },
+  /// Single-column vertical list (phones) — full swipe-to-delete support.
+  Widget _buildListView(JournalProvider provider, List<Notebook> notebooks) {
+    return ListView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: notebooks.length + (provider.loadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= notebooks.length) return _buildLoadMoreFooter();
+        final nb = notebooks[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Dismissible(
+            key: ValueKey(nb.id),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) => _confirmDelete(nb),
+            onDismissed: (_) => provider.delete(nb.id),
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 28),
+              decoration: BoxDecoration(
+                color: const Color(0xFFC0392B).withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.delete_outline,
+                  color: Colors.white, size: 30),
+            ),
+            child: NotebookCover(
+              notebook: nb,
+              onTap: () => _openNotebook(nb),
+            ),
           ),
         );
       },
+    );
+  }
+
+  /// Multi-column grid (tablet / desktop). Tap opens; long-press deletes (since
+  /// swipe-to-delete doesn't read naturally in a grid).
+  Widget _buildGridView(
+    JournalProvider provider,
+    List<Notebook> notebooks,
+    int columns,
+  ) {
+    return GridView.builder(
+      controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 16 / 9,
+      ),
+      itemCount: notebooks.length,
+      itemBuilder: (context, index) {
+        final nb = notebooks[index];
+        return GestureDetector(
+          onLongPress: () async {
+            if (await _confirmDelete(nb) && mounted) provider.delete(nb.id);
+          },
+          child: NotebookCover(
+            notebook: nb,
+            onTap: () => _openNotebook(nb),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadMoreFooter() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: Color(0xFF6B8E5A),
+          ),
+        ),
+      ),
     );
   }
 

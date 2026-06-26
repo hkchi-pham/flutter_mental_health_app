@@ -460,7 +460,9 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
         child: SingleChildScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(44, 16, 20, 60),
+          // Top padding is 0 so rows land on the 32px rule grid (the painter
+          // draws its first rule one spacing down). Left clears the margin line.
+          padding: const EdgeInsets.fromLTRB(44, 0, 20, 60),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -473,7 +475,7 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
                     _buildEntry(grouped[day]![i]),
                     if (i < grouped[day]!.length - 1) _buildDottedSeparator(),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: kRuledLineSpacing),
                 ],
               if (_writing)
                 EntryInputBox(
@@ -606,14 +608,18 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
 
   Widget _buildDateHeader(DateTime day) {
     final label = DateFormat('EEEE, d MMMM yyyy').format(day);
-    return Padding(
-      padding: const EdgeInsets.only(top: 6, bottom: 6),
-      child: Text(
-        label,
-        style: GoogleFonts.quintessential(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF8D6E63),
+    // Occupy exactly one ruled row so following entries stay on the grid.
+    return SizedBox(
+      height: kRuledLineSpacing,
+      child: Align(
+        alignment: Alignment.bottomLeft,
+        child: Text(
+          label,
+          style: GoogleFonts.quintessential(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF8D6E63),
+          ),
         ),
       ),
     );
@@ -624,26 +630,27 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
       behavior: HitTestBehavior.opaque,
       onTap: _writing ? null : () => _startEditEntry(entry),
       onLongPress: () => _onEntryLongPress(entry),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(
-          entry.content,
-          style: GoogleFonts.patrickHand(
-            fontSize: 22,
-            height: 1.35,
-            color: const Color(0xFF2E2616),
-          ),
+      child: Text(
+        entry.content,
+        style: GoogleFonts.patrickHand(
+          fontSize: 22,
+          // Line-height == rule spacing so each wrapped line sits on a rule.
+          height: kRuledLineSpacing / 22,
+          color: const Color(0xFF2E2616),
         ),
       ),
     );
   }
 
   Widget _buildDottedSeparator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: CustomPaint(
-        size: const Size(double.infinity, 1),
-        painter: _DottedLinePainter(),
+    // One ruled row tall, dotted line centred — keeps the grid intact.
+    return SizedBox(
+      height: kRuledLineSpacing,
+      child: Center(
+        child: CustomPaint(
+          size: const Size(double.infinity, 1),
+          painter: _DottedLinePainter(),
+        ),
       ),
     );
   }

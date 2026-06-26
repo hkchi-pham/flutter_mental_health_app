@@ -89,7 +89,7 @@ class _EntryInputBoxState extends State<EntryInputBox> {
               textCapitalization: TextCapitalization.sentences,
               style: GoogleFonts.patrickHand(
                 fontSize: 22,
-                height: 1.2,
+                height: kRuledLineSpacing / 22,
                 color: const Color(0xFF3A2E20),
               ),
               decoration: InputDecoration(

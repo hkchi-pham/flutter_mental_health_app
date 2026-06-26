@@ -151,11 +151,12 @@ class JournalProvider extends ChangeNotifier {
   // Private
   // ===========================================================================
 
-  /// Returns [list] sorted newest-first by [Notebook.lastWritten]. Single
-  /// source of truth for ordering.
+  /// Returns [list] sorted newest-first by **created time**. Single source of
+  /// truth for ordering. Using createdAt (not lastWritten) keeps the list order
+  /// STABLE — adding/editing entries doesn't reshuffle notebooks.
   List<Notebook> _sort(List<Notebook> list) {
     final sorted = [...list]
-      ..sort((a, b) => b.lastWritten.compareTo(a.lastWritten));
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return sorted;
   }
 
