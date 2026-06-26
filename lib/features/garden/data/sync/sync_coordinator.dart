@@ -21,11 +21,18 @@ class SyncCoordinator with WidgetsBindingObserver {
   SyncCoordinator({
     required ApiGardenRepository repo,
     required AuthSession session,
+    List<Future<void> Function()> extraSyncs = const [],
   })  : _repo = repo,
-        _session = session;
+        _session = session,
+        _extraSyncs = extraSyncs;
 
   final ApiGardenRepository _repo;
   final AuthSession _session;
+
+  /// Additional sync targets fired alongside the garden on every trigger
+  /// (app-open / reconnect / resume). Used to drive the journal offline
+  /// write-queue replay without coupling this coordinator to journal types.
+  final List<Future<void> Function()> _extraSyncs;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
@@ -101,6 +108,13 @@ class SyncCoordinator with WidgetsBindingObserver {
         await _repo.backgroundSync();
       } catch (_) {
         // Swallow all errors — offline or server errors must never surface.
+      }
+      for (final sync in _extraSyncs) {
+        try {
+          await sync();
+        } catch (_) {
+          // Each extra target is independent and best-effort.
+        }
       }
     }());
   }

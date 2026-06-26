@@ -86,34 +86,13 @@ class MyApp extends StatelessWidget {
           update: (_, repo, prev) => repo,
         ),
 
-        // SyncCoordinator — event-driven triggers only (app-open / reconnect /
-        // resume-from-background). Created once; start() is called here so
-        // the app-open sync fires on the first post-frame callback.
-        Provider<SyncCoordinator>(
-          create: (ctx) {
-            final coordinator = SyncCoordinator(
-              repo: ctx.read<ApiGardenRepository>(),
-              session: ctx.read<AuthSession>(),
-            );
-            coordinator.start();
-            return coordinator;
-          },
-          dispose: (_, coordinator) => coordinator.dispose(),
-        ),
-
-        ChangeNotifierProxyProvider<GardenRepository, GardenProvider>(
-          create: (ctx) =>
-              GardenProvider(repository: ctx.read<GardenRepository>()),
-          update: (_, repo, prev) =>
-              prev ?? GardenProvider(repository: repo),
-        ),
-
         // ── Journal layer (Phase 11) ────────────────────────────────────────
         //
         // Offline-first journal data layer mirroring the garden template:
         // JournalRepository (cache-first read, optimistic writes, offline queue)
         // sits behind a JournalProvider ChangeNotifier the journal screens watch.
-        // Reads ApiClient + AuthSession already provided above.
+        // Reads ApiClient + AuthSession already provided above. Declared BEFORE
+        // SyncCoordinator so the coordinator can drive the journal reconnect sync.
         Provider<JournalRepository>(
           create: (ctx) => JournalRepository(
             remote: JournalRemoteDataSource(ctx.read<ApiClient>()),
@@ -128,6 +107,32 @@ class MyApp extends StatelessWidget {
               JournalProvider(repository: ctx.read<JournalRepository>()),
           update: (_, repo, prev) =>
               prev ?? JournalProvider(repository: repo),
+        ),
+
+        // SyncCoordinator — event-driven triggers only (app-open / reconnect /
+        // resume-from-background). Created once; start() is called here so
+        // the app-open sync fires on the first post-frame callback. Drives BOTH
+        // the garden sync and the journal offline write-queue replay/refresh.
+        Provider<SyncCoordinator>(
+          create: (ctx) {
+            final coordinator = SyncCoordinator(
+              repo: ctx.read<ApiGardenRepository>(),
+              session: ctx.read<AuthSession>(),
+              extraSyncs: [
+                () => ctx.read<JournalProvider>().syncOnReconnect(),
+              ],
+            );
+            coordinator.start();
+            return coordinator;
+          },
+          dispose: (_, coordinator) => coordinator.dispose(),
+        ),
+
+        ChangeNotifierProxyProvider<GardenRepository, GardenProvider>(
+          create: (ctx) =>
+              GardenProvider(repository: ctx.read<GardenRepository>()),
+          update: (_, repo, prev) =>
+              prev ?? GardenProvider(repository: repo),
         ),
       ],
       child: MaterialApp(
