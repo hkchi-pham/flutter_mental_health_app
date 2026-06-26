@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/responsive.dart';
 import '../data/models/notebook.dart';
 import '../logic/journal_provider.dart';
 import 'notebook_page_screen.dart';
@@ -180,15 +179,13 @@ class _JournalListScreenState extends State<JournalListScreen> {
                 Container(color: const Color(0xFFF3E9D2)),
           ),
 
-          // 2. Content.
+          // 2. Content — full width (no centered cap; the list fills the screen).
           SafeArea(
-            child: MaxWidthBox(
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(child: _buildBody()),
-                ],
-              ),
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(child: _buildBody()),
+              ],
             ),
           ),
         ],

@@ -87,7 +87,7 @@ class _EntryInputBoxState extends State<EntryInputBox> {
               minLines: 1,
               keyboardType: TextInputType.multiline,
               textCapitalization: TextCapitalization.sentences,
-              style: GoogleFonts.caveat(
+              style: GoogleFonts.patrickHand(
                 fontSize: 22,
                 height: 1.2,
                 color: const Color(0xFF3A2E20),
@@ -96,7 +96,7 @@ class _EntryInputBoxState extends State<EntryInputBox> {
                 isDense: true,
                 border: InputBorder.none,
                 hintText: 'Viết điều gì đó...',
-                hintStyle: GoogleFonts.caveat(
+                hintStyle: GoogleFonts.patrickHand(
                   fontSize: 22,
                   color: const Color(0xFF9A8B73),
                 ),

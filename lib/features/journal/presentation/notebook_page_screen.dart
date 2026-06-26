@@ -111,46 +111,53 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
     final garden = context.read<GardenProvider>();
     final nb = _current;
 
-    if (_editingEntryId != null) {
-      // EDIT — rebuild that entry's content + replace whole page.
-      final newEntries = [
-        for (final e in nb.entries)
-          if (e.id == _editingEntryId) e.copyWith(content: text) else e,
-      ];
-      final updated = nb.copyWith(
-        entries: newEntries,
-        updatedAt: DateTime.now(),
-      );
-      await provider.replacePage(updated);
+    try {
+      if (_editingEntryId != null) {
+        // EDIT — rebuild that entry's content + replace whole page.
+        final newEntries = [
+          for (final e in nb.entries)
+            if (e.id == _editingEntryId) e.copyWith(content: text) else e,
+        ];
+        final updated = nb.copyWith(
+          entries: newEntries,
+          updatedAt: DateTime.now(),
+        );
+        await provider.replacePage(updated);
+        if (!mounted) return;
+        setState(() {
+          _notebook = updated;
+          _writing = false;
+          _editingEntryId = null;
+          _editingInitialText = null;
+        });
+        _toast('Đã cập nhật');
+      } else {
+        // NEW — append entry, then award XP via BOTH garden hooks.
+        final entry = NotebookEntry(
+          id: _newEntryId(),
+          content: text,
+          date: DateTime.now(),
+        );
+        final updated = await provider.addEntry(nb, entry);
+        if (!mounted) return;
+        garden.onJournalEntryAdded();
+        final wordCount = text
+            .trim()
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .length;
+        garden.onJournalEntryWithWordCount(wordCount);
+        setState(() {
+          _notebook = updated;
+          _writing = false;
+        });
+        _toast('+XP cho khu vườn 🌱');
+      }
+    } catch (e) {
+      // Surface failures instead of silently swallowing them (the input box's
+      // onSubmit is fire-and-forget, so an uncaught error would just vanish).
       if (!mounted) return;
-      setState(() {
-        _notebook = updated;
-        _writing = false;
-        _editingEntryId = null;
-        _editingInitialText = null;
-      });
-      _toast('Đã cập nhật');
-    } else {
-      // NEW — append entry, then award XP via BOTH garden hooks.
-      final entry = NotebookEntry(
-        id: _newEntryId(),
-        content: text,
-        date: DateTime.now(),
-      );
-      final updated = await provider.addEntry(nb, entry);
-      if (!mounted) return;
-      garden.onJournalEntryAdded();
-      final wordCount = text
-          .trim()
-          .split(RegExp(r'\s+'))
-          .where((w) => w.isNotEmpty)
-          .length;
-      garden.onJournalEntryWithWordCount(wordCount);
-      setState(() {
-        _notebook = updated;
-        _writing = false;
-      });
-      _toast('+XP cho khu vườn 🌱');
+      _toast('Không lưu được — thử lại sau');
     }
   }
 
@@ -422,19 +429,16 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
         final accent = notebookColorOf(live.color);
         final isPublic = live.visibility == NotebookVisibility.public_;
 
+        // Full-screen notebook page: the ruled cream paper fills the whole
+        // screen; a slim header (back / title+emoji / menu) sits on top.
         return Scaffold(
-          backgroundColor: const Color(0xFFEFE6D2),
+          backgroundColor: kPaperCream,
           body: SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
-                child: Column(
-                  children: [
-                    Expanded(child: _buildPage(live, accent)),
-                    _buildToolbar(isPublic),
-                  ],
-                ),
-              ),
+            child: Column(
+              children: [
+                _buildTopBar(live, accent, isPublic),
+                Expanded(child: _buildPage(live, accent)),
+              ],
             ),
           ),
         );
@@ -446,19 +450,20 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
     final grouped = _groupByDay(nb.entries);
     final dayKeys = grouped.keys.toList();
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+    // Ruled lines painted across the full page; content scrolls on top.
+    return CustomPaint(
+      painter: const RuledPaperPainter(),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         // Tapping a blank area of the page begins a new entry.
         onTap: _writing ? null : _startNewEntry,
-        child: RuledPaper(
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(44, 16, 20, 60),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(nb, accent),
-              const SizedBox(height: 12),
               if (nb.entries.isEmpty && !_writing)
                 _buildEmptyHint()
               else
@@ -486,27 +491,116 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
     );
   }
 
-  Widget _buildHeader(Notebook nb, Color accent) {
-    return Row(
-      children: [
-        Text(
-          nb.emoji.isEmpty ? '📓' : nb.emoji,
-          style: const TextStyle(fontSize: 28),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            nb.title.isEmpty ? 'Không tên' : nb.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.quintessential(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: accent,
+  /// Slim header on the notebook page: back button (top-left), the title + emoji
+  /// centered, and a menu button (top-right) that opens all the metadata/destruct
+  /// actions. Replaces the old bottom toolbar.
+  Widget _buildTopBar(Notebook nb, Color accent, bool isPublic) {
+    return Container(
+      color: kPaperCream,
+      padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+      child: Row(
+        children: [
+          // Back — top-left corner.
+          _IconAssetButton(
+            asset: 'assets/ui_icons/icons/back_icon_@3x.png',
+            fallback: Icons.arrow_back,
+            tooltip: 'Quay lại',
+            onTap: () => Navigator.of(context).pop(),
+          ),
+          // Title + emoji — centered.
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    nb.title.isEmpty ? 'Không tên' : nb.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.dancingScript(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                    ),
+                  ),
+                ),
+                if (nb.emoji.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Text(nb.emoji, style: const TextStyle(fontSize: 24)),
+                ],
+              ],
             ),
           ),
+          // Menu — top-right corner; all tools live here.
+          _buildMenu(isPublic),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenu(bool isPublic) {
+    return PopupMenuButton<String>(
+      tooltip: 'Tuỳ chọn',
+      color: const Color(0xFFFCF6E8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: (value) {
+        switch (value) {
+          case 'edit':
+            _editMetadata();
+          case 'color':
+            _pickColor();
+          case 'save':
+            _save();
+          case 'visibility':
+            _toggleVisibility();
+          case 'delete':
+            _deleteNotebook();
+        }
+      },
+      itemBuilder: (context) => [
+        _menuItem('edit', Icons.edit, 'Sửa thông tin'),
+        _menuItem('color', Icons.palette, 'Đổi màu'),
+        _menuItem('save', Icons.save, 'Lưu'),
+        _menuItem(
+          'visibility',
+          isPublic ? Icons.visibility : Icons.visibility_off,
+          isPublic ? 'Đang công khai' : 'Đang riêng tư',
         ),
+        _menuItem('delete', Icons.delete_outline, 'Xoá nhật ký',
+            danger: true),
       ],
+      child: _IconAssetButton(
+        asset: 'assets/ui_icons/icons/menu_icon_@3x.png',
+        fallback: Icons.menu,
+        tooltip: 'Tuỳ chọn',
+        onTap: null, // tap handled by PopupMenuButton
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _menuItem(
+    String value,
+    IconData icon,
+    String label, {
+    bool danger = false,
+  }) {
+    final color = danger ? const Color(0xFFC0392B) : kMargin;
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: GoogleFonts.nunito(
+              fontWeight: FontWeight.w600,
+              color: danger ? const Color(0xFFC0392B) : const Color(0xFF3A2E20),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -534,7 +628,7 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
           entry.content,
-          style: GoogleFonts.caveat(
+          style: GoogleFonts.patrickHand(
             fontSize: 22,
             height: 1.35,
             color: const Color(0xFF2E2616),
@@ -560,7 +654,7 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
       child: Center(
         child: Text(
           'Chạm vào trang để bắt đầu viết',
-          style: GoogleFonts.caveat(
+          style: GoogleFonts.patrickHand(
             fontSize: 24,
             color: const Color(0xFF9A8B73),
           ),
@@ -581,7 +675,7 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
             const SizedBox(width: 6),
             Text(
               'Viết tiếp...',
-              style: GoogleFonts.caveat(
+              style: GoogleFonts.patrickHand(
                 fontSize: 20,
                 color: kMargin.withValues(alpha: 0.6),
               ),
@@ -592,52 +686,40 @@ class _NotebookPageScreenState extends State<NotebookPageScreen> {
     );
   }
 
-  Widget _buildToolbar(bool isPublic) {
-    return Container(
-      color: kMargin,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          IconButton(
-            tooltip: 'Quay lại',
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back),
-            color: Colors.white,
-          ),
-          IconButton(
-            tooltip: 'Sửa thông tin',
-            onPressed: _editMetadata,
-            icon: const Icon(Icons.edit),
-            color: Colors.white,
-          ),
-          IconButton(
-            tooltip: 'Đổi màu',
-            onPressed: _pickColor,
-            icon: const Icon(Icons.palette),
-            color: Colors.white,
-          ),
-          IconButton(
-            tooltip: 'Lưu',
-            onPressed: _save,
-            icon: const Icon(Icons.save),
-            color: Colors.white,
-          ),
-          IconButton(
-            tooltip: isPublic ? 'Công khai' : 'Riêng tư',
-            onPressed: _toggleVisibility,
-            icon: Icon(isPublic ? Icons.visibility : Icons.visibility_off),
-            color: Colors.white,
-          ),
-          IconButton(
-            tooltip: 'Xoá nhật ký',
-            onPressed: _deleteNotebook,
-            icon: const Icon(Icons.delete_outline),
-            color: Colors.white,
-          ),
-        ],
+}
+
+/// A square tappable button rendering a PNG icon asset with a Material-icon
+/// fallback. Used for the back / menu buttons in the notebook page top bar.
+class _IconAssetButton extends StatelessWidget {
+  const _IconAssetButton({
+    required this.asset,
+    required this.fallback,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final String asset;
+  final IconData fallback;
+  final String tooltip;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Image.asset(
+          asset,
+          width: 28,
+          height: 28,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => Icon(fallback, size: 26, color: kMargin),
+        ),
       ),
     );
+    return Tooltip(message: tooltip, child: button);
   }
 }
 

@@ -64,7 +64,9 @@ class _NotebookFormDialogState extends State<NotebookFormDialog>
     super.initState();
     final init = widget.initial;
     _titleCtl = TextEditingController(text: init?.title ?? '');
-    _emoji = init?.emoji.isNotEmpty == true ? init!.emoji : '📓';
+    // New notebooks default to 📓; existing ones keep their emoji, which may be
+    // empty ('none') now that the picker offers a none option.
+    _emoji = init?.emoji ?? '📓';
     _color = init?.color ?? kDefaultNotebookColor;
     _visibility = init?.visibility ?? NotebookVisibility.private_;
 
@@ -281,7 +283,16 @@ class _NotebookFormDialogState extends State<NotebookFormDialog>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_emoji, style: const TextStyle(fontSize: 22)),
+                if (_emoji.isEmpty)
+                  Text(
+                    'Không có',
+                    style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      color: const Color(0xFF9A8B73),
+                    ),
+                  )
+                else
+                  Text(_emoji, style: const TextStyle(fontSize: 22)),
                 const SizedBox(width: 6),
                 Icon(
                   _emojiOpen ? Icons.expand_less : Icons.expand_more,

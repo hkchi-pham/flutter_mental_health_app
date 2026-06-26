@@ -35,10 +35,17 @@ class JournalRemoteDataSource {
 
   /// POST /journals/ — create a new journal.
   ///
-  /// The backend returns a success message ONLY (no body); callers re-fetch
-  /// via [list] to obtain the server-assigned record.
-  Future<void> create(JournalDto journal) =>
-      _client.post('/journals/', body: journal.toCreateJson());
+  /// The backend returns the created journal in `data` (Plan 11 fix), so the
+  /// caller can adopt the server-assigned id. If an older backend returns no
+  /// `data`, the input [journal] is returned unchanged as a fallback.
+  Future<JournalDto> create(JournalDto journal) async {
+    final body = await _client.post('/journals/', body: journal.toCreateJson());
+    final data = (body is Map ? body['data'] : null);
+    if (data is Map) {
+      return JournalDto.fromJson(data.cast<String, dynamic>());
+    }
+    return journal;
+  }
 
   /// GET /journals/{id} → SuccessResponse[JournalResponse].
   Future<JournalDto> getOne(String id) async {

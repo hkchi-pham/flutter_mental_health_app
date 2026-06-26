@@ -49,6 +49,9 @@ class EmojiPickerGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The first cell is a "none" option (empty string) so a notebook can have
+    // no emoji; the rest are the curated glyphs.
+    final items = ['', ...kJournalEmojis];
     return GridView.builder(
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
@@ -58,10 +61,11 @@ class EmojiPickerGrid extends StatelessWidget {
         mainAxisSpacing: 4,
         crossAxisSpacing: 4,
       ),
-      itemCount: kJournalEmojis.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final emoji = kJournalEmojis[index];
-        final isSelected = emoji == selected;
+        final emoji = items[index];
+        final isNone = emoji.isEmpty;
+        final isSelected = emoji == (selected ?? '');
         return GestureDetector(
           onTap: () => onSelected(emoji),
           behavior: HitTestBehavior.opaque,
@@ -76,11 +80,18 @@ class EmojiPickerGrid extends StatelessWidget {
                   : null,
             ),
             alignment: Alignment.center,
-            child: Text(
-              emoji,
-              // Default style on purpose — keeps the platform emoji glyphs.
-              style: const TextStyle(fontSize: 22),
-            ),
+            child: isNone
+                // "None" cell — a crossed-circle glyph meaning "no emoji".
+                ? const Icon(
+                    Icons.block,
+                    size: 20,
+                    color: Color(0xFF9A8B73),
+                  )
+                : Text(
+                    emoji,
+                    // Default style on purpose — keeps the platform emoji glyphs.
+                    style: const TextStyle(fontSize: 22),
+                  ),
           ),
         );
       },

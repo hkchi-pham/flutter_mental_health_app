@@ -91,9 +91,12 @@ class JournalRepository {
 
   /// Optimistically adds [draft] to the cache, then creates it on the server.
   ///
-  /// The POST returns no body, so on success we refresh the cache from the
-  /// server (the draft's client-supplied id remains the local identity). When
-  /// offline the create op is enqueued and the optimistic local copy is kept.
+  /// The POST now returns the created journal, so on success we adopt the
+  /// server-assigned id: the optimistic client-id copy is swapped for the server
+  /// record in the cache, and the server notebook is returned. This is critical
+  /// — entry/edit/delete calls target `/journals/{id}`, which 404s under a local
+  /// temp id. When offline the create op is enqueued and the client-id copy is
+  /// kept (reconciled on reconnect via the queue replay + refresh).
   Future<Notebook> createNotebook(Notebook draft) async {
     final list = await _readOrEmpty();
     await _writeCache([...list, draft]);
@@ -102,9 +105,16 @@ class JournalRepository {
 
     final dto = JournalDto.fromLocal(draft, userId: _session.userId ?? '');
     try {
-      await _remote.create(dto);
-      // POST returns no body — refresh to adopt the server record.
-      unawaited(_backgroundRefresh());
+      final created = await _remote.create(dto);
+      final serverNb = created.toLocal();
+      // Swap the optimistic client-id draft for the server record.
+      final cur = await _readOrEmpty();
+      await _writeCache([
+        for (final n in cur)
+          if (n.id != draft.id) n,
+        serverNb,
+      ]);
+      return serverNb;
     } catch (e) {
       if (_isOffline(e)) {
         await _queue.enqueue(JournalChangeOp.create(
@@ -112,11 +122,11 @@ class JournalRepository {
           entityId: draft.id,
           payload: dto.toCreateJson(),
         ));
+        return draft;
       } else {
         rethrow;
       }
     }
-    return draft;
   }
 
   /// Updates notebook metadata (title/emoji/visibility/color) optimistically,

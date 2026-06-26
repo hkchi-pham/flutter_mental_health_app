@@ -82,36 +82,44 @@ class NotebookCover extends StatelessWidget {
 
             // 2. Overlay content.
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              padding: const EdgeInsets.fromLTRB(28, 16, 28, 16),
               child: Stack(
                 children: [
-                  // Emoji — top-left, large.
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      notebook.emoji.isEmpty ? '📓' : notebook.emoji,
-                      style: const TextStyle(fontSize: 30),
-                    ),
-                  ),
-
-                  // Title + date — centered block.
+                  // Title (+ emoji to its right) and date — centered block.
                   Align(
                     alignment: Alignment.center,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          notebook.title.isEmpty
-                              ? 'Không tên'
-                              : notebook.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.quintessential(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF3A2E20),
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                notebook.title.isEmpty
+                                    ? 'Không tên'
+                                    : notebook.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                // Bigger, softer handwriting-style title.
+                                style: GoogleFonts.dancingScript(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF3A2E20),
+                                ),
+                              ),
+                            ),
+                            // Emoji to the RIGHT of the title (omitted for 'none').
+                            if (notebook.emoji.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                notebook.emoji,
+                                style: const TextStyle(fontSize: 26),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
