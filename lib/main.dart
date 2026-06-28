@@ -15,6 +15,9 @@ import 'features/garden/data/remote/garden_item_remote_data_source.dart';
 import 'features/garden/data/remote/garden_user_remote_data_source.dart';
 import 'features/garden/data/sync/sync_coordinator.dart';
 import 'features/garden/logic/garden_provider.dart';
+import 'features/chat/data/chat_repository.dart';
+import 'features/chat/data/remote/chat_remote_data_source.dart';
+import 'features/chat/logic/chat_provider.dart';
 import 'features/journal/data/cache/journal_cache_store.dart';
 import 'features/journal/data/cache/journal_change_queue.dart';
 import 'features/journal/data/journal_repository.dart';
@@ -107,6 +110,25 @@ class MyApp extends StatelessWidget {
               JournalProvider(repository: ctx.read<JournalRepository>()),
           update: (_, repo, prev) =>
               prev ?? JournalProvider(repository: repo),
+        ),
+
+        // ── Chat layer (Phase 12) ───────────────────────────────────────────
+        //
+        // ChatRepository wraps the remote data source + SharedPreferences
+        // first-message store. ChatProvider is the single ChangeNotifier that
+        // the chat screen and drawer consume for all state (conversations,
+        // messages, mood, send/typing/error/retry). Mirrors the journal block.
+        Provider<ChatRepository>(
+          create: (ctx) => ChatRepository(
+            ChatRemoteDataSource(ctx.read<ApiClient>()),
+          ),
+        ),
+
+        ChangeNotifierProxyProvider<ChatRepository, ChatProvider>(
+          create: (ctx) =>
+              ChatProvider(repository: ctx.read<ChatRepository>()),
+          update: (_, repo, prev) =>
+              prev ?? ChatProvider(repository: repo),
         ),
 
         // SyncCoordinator — event-driven triggers only (app-open / reconnect /
