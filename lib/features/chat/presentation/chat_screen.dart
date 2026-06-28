@@ -31,28 +31,34 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   int _lastScrollTick = -1;
+  // Cache the provider reference so dispose() never touches context.
+  late final ChatProvider _chatProvider;
 
   @override
   void initState() {
     super.initState();
+    // Read is safe in initState — context is available and the widget is
+    // already attached to the tree.
+    _chatProvider = context.read<ChatProvider>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // Load conversation history so ChatHistoryDrawer has data.
-      context.read<ChatProvider>().loadConversations();
+      _chatProvider.loadConversations();
     });
     // Attach auto-scroll listener (CHAT-06).
-    context.read<ChatProvider>().addListener(_onProviderChanged);
+    _chatProvider.addListener(_onProviderChanged);
   }
 
   @override
   void dispose() {
-    context.read<ChatProvider>().removeListener(_onProviderChanged);
+    // Use the cached reference — never call context.read in dispose().
+    _chatProvider.removeListener(_onProviderChanged);
     _scrollController.dispose();
     super.dispose();
   }
 
   void _onProviderChanged() {
-    final tick = context.read<ChatProvider>().scrollTick;
+    final tick = _chatProvider.scrollTick;
     if (tick != _lastScrollTick) {
       _lastScrollTick = tick;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -128,64 +134,93 @@ class _ChatScreenState extends State<ChatScreen> {
 ///
 /// Leading: hamburger IconButton that opens [ChatHistoryDrawer] via a [Builder].
 /// Center: circular Komo avatar + "Komo" title.
+/// Trailing: new-conversation button using new_chat_icon_@3x.png asset.
+///
+/// All sizes scale with the available band width (clamped) so the header
+/// looks good on 360 px phones and wider tablets (responsive fix 7).
 class _KomoHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      decoration: BoxDecoration(
-        color: kChatCream.withValues(alpha: 0.85),
-        border: Border(
-          bottom: BorderSide(
-            color: kSageGreen.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Hamburger — opens the drawer from the nearest Scaffold.
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Color(0xFF3D3522)),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Lịch sử trò chuyện',
-            ),
-          ),
-          const SizedBox(width: 4),
-          ClipOval(
-            child: Image.asset(
-              'assets/ui_icons/icons/komo_avatar_@3x.png',
-              width: 36,
-              height: 36,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, _) => const KomoAvatar(size: 36),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Komo',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF2E5232),
-            ),
-          ),
-          // Spacer so future actions (e.g. new conversation button) slot in neatly.
-          const Spacer(),
-          // New conversation button — calls provider.startNewConversation().
-          Consumer<ChatProvider>(
-            builder: (context, provider, _) => IconButton(
-              icon: const Icon(
-                Icons.add_comment_outlined,
-                color: Color(0xFF3D3522),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        // Responsive sizes — clamped for 360 px phone → 500 px band.
+        final avatarSize = (w * 0.09).clamp(32.0, 44.0);
+        final titleFontSize = (w * 0.044).clamp(15.0, 20.0);
+        final iconBtnSize = (w * 0.09).clamp(32.0, 44.0);
+        final vPad = (w * 0.016).clamp(6.0, 12.0);
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 4, vertical: vPad),
+          decoration: BoxDecoration(
+            color: kChatCream.withValues(alpha: 0.85),
+            border: Border(
+              bottom: BorderSide(
+                color: kSageGreen.withValues(alpha: 0.3),
+                width: 1,
               ),
-              onPressed: () => provider.startNewConversation(),
-              tooltip: 'Cuộc trò chuyện mới',
             ),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              // Hamburger — opens the drawer from the nearest Scaffold.
+              Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Color(0xFF3D3522)),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  tooltip: 'Lịch sử trò chuyện',
+                ),
+              ),
+              SizedBox(width: w * 0.01),
+              ClipOval(
+                child: Image.asset(
+                  'assets/ui_icons/icons/komo_avatar_@3x.png',
+                  width: avatarSize,
+                  height: avatarSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, _) =>
+                      KomoAvatar(size: avatarSize),
+                ),
+              ),
+              SizedBox(width: w * 0.02),
+              Text(
+                'Komo',
+                style: TextStyle(
+                  fontSize: titleFontSize,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2E5232),
+                ),
+              ),
+              // Spacer pushes the new-conversation button to the right.
+              const Spacer(),
+              // New conversation button — PNG asset, falls back to Material icon.
+              Consumer<ChatProvider>(
+                builder: (context, provider, _) => GestureDetector(
+                  onTap: () => provider.startNewConversation(),
+                  child: Tooltip(
+                    message: 'Cuộc trò chuyện mới',
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      child: Image.asset(
+                        'assets/ui_icons/icons/new_chat_icon_@3x.png',
+                        width: iconBtnSize,
+                        height: iconBtnSize,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, _) => Icon(
+                          Icons.add_comment_outlined,
+                          color: const Color(0xFF3D3522),
+                          size: iconBtnSize,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
