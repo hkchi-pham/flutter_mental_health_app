@@ -11,6 +11,7 @@
 /// [moodFromFirstMessage] is the SINGLE mood-recovery helper. Both
 /// [ChatProvider.openConversation] and the title-derivation path consume the
 /// SAME stored first-message string — no separate fetch needed (MOOD-04).
+library;
 
 /// The seven moods a user can select before starting a chat.
 ///
