@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../chat/presentation/chat_screen.dart';
 import '../../garden/presentation/garden_screen.dart';
 import '../../journal/presentation/journal_list_screen.dart';
 
@@ -65,6 +66,7 @@ class _AppShellState extends State<AppShell> {
         children: const [
           GardenScreen(),
           JournalListScreen(),
+          ChatScreen(),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -113,7 +115,7 @@ class _AppShellState extends State<AppShell> {
                 index: 2,
                 asset: 'assets/ui_icons/icons/chat_btn_@3x.png',
                 fallback: Icons.chat_bubble_outline,
-                enabled: false,
+                enabled: true,
               ),
               _navItem(
                 index: 3,
