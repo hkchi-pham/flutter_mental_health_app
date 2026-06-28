@@ -1,11 +1,17 @@
 /// Mood model and helpers for the AI chat feature.
 ///
-/// NEUTRAL FALLBACK DECISION (Claude's discretion, CONTEXT lines 39-42):
-/// "Bình thường" (normal/neutral) has no image asset in
-/// `assets/ui_icons/icons/`. [Mood.normal.iconAsset] returns `null`; the UI
-/// renders a tinted `Icons.sentiment_neutral` Material icon instead of an
-/// Image.asset. This keeps the UI honest about missing artwork rather than
-/// silently reusing an unrelated icon.
+/// ASSET AVAILABILITY (updated):
+/// All six moods now have image assets in `assets/ui_icons/icons/`. The
+/// `mood_normal_icon_@3x.png` asset was added in the gap-closure pass (12-05),
+/// so [Mood.normal.iconAsset] now returns a real path. The UI's errorBuilder
+/// keeps `Icons.sentiment_neutral` as a graceful fallback.
+///
+/// BACKEND ALIGNMENT (gap-closure 12-05):
+/// The backend EMOTION_ANALYSIS_PROMPT uses exactly these six Vietnamese
+/// category tokens: `vui`, `buồn`, `lo_lắng`, `tức_giận`, `mệt_mỏi`,
+/// `bình_thường`. [moodWord] values now match (with spaces instead of
+/// underscores, matching the prependSentence format the backend parses).
+/// `Mood.calm` was removed — the backend has no "calm" category.
 ///
 /// FIRST-MESSAGE PERSISTENCE SOURCE:
 /// [moodFromFirstMessage] is the SINGLE mood-recovery helper. Both
@@ -13,18 +19,16 @@
 /// SAME stored first-message string — no separate fetch needed (MOOD-04).
 library;
 
-/// The seven moods a user can select before starting a chat.
+/// The six moods a user can select before starting a chat.
 ///
-/// Seven moods, six image assets — "Bình thường" (normal) has no asset and
-/// renders a Material icon fallback in the UI.
+/// Aligned to the backend's six emotion categories. "Bình tĩnh" (calm) was
+/// removed because the backend has no matching category — conversations where
+/// calm was previously selected will simply show no mood chip on re-open.
 enum Mood {
   /// Vui / happy — asset: mood_happy_icon_@3x.png
   happy,
 
-  /// Bình tĩnh / calm — asset: mood_calm_icon_@3x.png
-  calm,
-
-  /// Bình thường / normal — NO image asset; UI uses Icons.sentiment_neutral.
+  /// Bình thường / normal — asset: mood_normal_icon_@3x.png
   normal,
 
   /// Buồn / sad — asset: mood_sad_icon_@3x.png
@@ -46,8 +50,6 @@ extension MoodExtension on Mood {
     switch (this) {
       case Mood.happy:
         return 'Vui';
-      case Mood.calm:
-        return 'Bình tĩnh';
       case Mood.normal:
         return 'Bình thường';
       case Mood.sad:
@@ -61,18 +63,16 @@ extension MoodExtension on Mood {
     }
   }
 
-  /// Relative path to the mood icon asset, or `null` for [Mood.normal].
+  /// Relative path to the mood icon asset.
   ///
-  /// When `null`, the UI should render `Icons.sentiment_neutral` tinted to the
-  /// app's sage-green colour as a fallback (CONTEXT decision, no neutral asset).
-  String? get iconAsset {
+  /// All six moods now have assets. The [errorBuilder] in the UI still falls
+  /// back to `Icons.sentiment_neutral` in case the file is missing at runtime.
+  String get iconAsset {
     switch (this) {
       case Mood.happy:
         return 'assets/ui_icons/icons/mood_happy_icon_@3x.png';
-      case Mood.calm:
-        return 'assets/ui_icons/icons/mood_calm_icon_@3x.png';
       case Mood.normal:
-        return null; // No asset — UI uses Icons.sentiment_neutral
+        return 'assets/ui_icons/icons/mood_normal_icon_@3x.png';
       case Mood.sad:
         return 'assets/ui_icons/icons/mood_sad_icon_@3x.png';
       case Mood.anxious:
@@ -86,15 +86,16 @@ extension MoodExtension on Mood {
 
   /// Lowercase Vietnamese word used in the prepend sentence.
   ///
-  /// Multi-word values (e.g. "bình tĩnh") are matched precisely in
-  /// [moodFromFirstMessage] against the full [prependSentence] prefix to avoid
-  /// mis-detection where a shorter word appears inside a longer one.
+  /// Values are aligned to the backend EMOTION_ANALYSIS_PROMPT categories
+  /// (spaces replace underscores used in the backend token names):
+  ///   vui, bình thường, buồn, lo lắng, tức giận, mệt mỏi
+  ///
+  /// Multi-word values are matched precisely in [moodFromFirstMessage] against
+  /// the full [prependSentence] prefix to avoid mis-detection.
   String get moodWord {
     switch (this) {
       case Mood.happy:
         return 'vui';
-      case Mood.calm:
-        return 'bình tĩnh';
       case Mood.normal:
         return 'bình thường';
       case Mood.sad:
@@ -102,9 +103,9 @@ extension MoodExtension on Mood {
       case Mood.anxious:
         return 'lo lắng';
       case Mood.angry:
-        return 'giận';
+        return 'tức giận'; // backend: tức_giận
       case Mood.tired:
-        return 'mệt';
+        return 'mệt mỏi'; // backend: mệt_mỏi
     }
   }
 
@@ -132,10 +133,10 @@ extension MoodExtension on Mood {
 ///   4. Return `null` when no mood prefix is found.
 ///
 /// CORRECTNESS NOTE: We match the FULL prependSentence prefix (not a bare
-/// substring of moodWord) so that multi-word values like "bình tĩnh" are not
-/// shadowed by the shorter "bình thường" (or vice-versa). Because enum order
-/// defines iteration order, callers should not depend on tie-breaking (there
-/// are no overlapping prefixes with the chosen sentences).
+/// substring of moodWord) so that multi-word values like "bình thường" are not
+/// shadowed by shorter words. Because enum order defines iteration order,
+/// callers should not depend on tie-breaking (there are no overlapping
+/// prefixes with the chosen sentences).
 Mood? moodFromFirstMessage(String? firstMessage) {
   if (firstMessage == null || firstMessage.trim().isEmpty) return null;
   final trimmed = firstMessage.trim();

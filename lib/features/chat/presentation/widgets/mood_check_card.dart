@@ -11,8 +11,8 @@ import 'chat_bubble.dart' show kChatCream, kSageGreen;
 /// when a new conversation is started (MOOD-01).
 ///
 /// Renders the mood_check_card_@3x.png frame as a background with the prompt
-/// "Hôm nay bạn cảm thấy thế nào?" and a [Wrap] of 7 tappable mood options
-/// (all 7 always visible — no internal scroll, MOOD-02).
+/// "Hôm nay bạn cảm thấy thế nào?" and a [Wrap] of 6 tappable mood options
+/// (all 6 always visible — no internal scroll, MOOD-02).
 ///
 /// Tapping a mood calls [onSelect] which the parent should route to
 /// [ChatProvider.selectMood].
@@ -42,14 +42,17 @@ class MoodCheckCard extends StatelessWidget {
               ),
             ),
           ),
-          // Card content
+          // Card content — centered inside the frame with balanced padding.
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            // Horizontal padding slightly larger than the frame's decorative
+            // border; vertical tuned so content sits in the frame's interior.
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
                   'Hôm nay bạn cảm thấy thế nào?',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -57,13 +60,17 @@ class MoodCheckCard extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 10,
-                  children: Mood.values.map((mood) {
-                    return _MoodOption(mood: mood, onTap: () => onSelect(mood));
-                  }).toList(),
+                const SizedBox(height: 14),
+                Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 10,
+                    children: Mood.values.map((mood) {
+                      return _MoodOption(
+                          mood: mood, onTap: () => onSelect(mood));
+                    }).toList(),
+                  ),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -161,8 +168,10 @@ class _MoodOption extends StatelessWidget {
   }
 }
 
-/// Mood icon — uses the image asset when available, falls back to a tinted
-/// [Icons.sentiment_neutral] Material icon for [Mood.normal] (no asset).
+/// Mood icon — uses the image asset for every mood (all six now have assets).
+///
+/// Falls back to a tinted [Icons.sentiment_neutral] Material icon if the asset
+/// fails to load at runtime (e.g. file missing in debug builds).
 class _MoodIcon extends StatelessWidget {
   const _MoodIcon({required this.mood, required this.size});
 
@@ -171,17 +180,8 @@ class _MoodIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = mood.iconAsset;
-    if (asset == null) {
-      // Mood.normal has no image asset — render a neutral Material icon (CONTEXT decision).
-      return Icon(
-        Icons.sentiment_neutral,
-        size: size,
-        color: const Color(0xFF6B8E5A),
-      );
-    }
     return Image.asset(
-      asset,
+      mood.iconAsset,
       width: size,
       height: size,
       fit: BoxFit.contain,
