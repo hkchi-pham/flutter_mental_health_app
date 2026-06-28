@@ -5,6 +5,7 @@ import '../../../core/responsive.dart';
 import '../data/models/chat_message.dart';
 import '../logic/chat_provider.dart';
 import 'widgets/chat_bubble.dart' show KomoAvatar, kChatCream, kSageGreen;
+import 'widgets/chat_history_drawer.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/mood_check_card.dart';
 import 'widgets/typing_indicator.dart';
@@ -14,10 +15,9 @@ import 'widgets/typing_indicator.dart';
 /// bottom input bar.
 ///
 /// Scaffold notes:
-///   - [drawer] is reserved for [ChatHistoryDrawer] (Plan 12-04). The leading
-///     hamburger IconButton is wired to open the drawer; Plan 04 installs
-///     the actual [ChatHistoryDrawer] into this Scaffold via a small documented
-///     edit.
+///   - [drawer] is [ChatHistoryDrawer] (installed in Plan 12-04). The leading
+///     hamburger IconButton calls [Scaffold.of(context).openDrawer()] via a
+///     [Builder] so the correct [Scaffold] ancestor is found.
 ///   - Auto-scroll (CHAT-06): a listener on [ChatProvider] fires whenever
 ///     [scrollTick] increments — [WidgetsBinding.addPostFrameCallback] then
 ///     animates the [ScrollController] to [maxScrollExtent].
@@ -37,7 +37,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Load conversation history so the drawer (Plan 12-04) has data.
+      // Load conversation history so ChatHistoryDrawer has data.
       context.read<ChatProvider>().loadConversations();
     });
     // Attach auto-scroll listener (CHAT-06).
@@ -71,11 +71,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ---------------------------------------------------------------------------
-      // Drawer — reserved for ChatHistoryDrawer (Plan 12-04).
-      // TODO(plan-12-04): Replace the placeholder with:
-      //   drawer: const ChatHistoryDrawer(),
-      // ---------------------------------------------------------------------------
+      // ChatHistoryDrawer installed in Plan 12-04 (HIST-01…06).
+      drawer: const ChatHistoryDrawer(),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -129,7 +126,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
 /// App bar–style Komo header (CHAT-02).
 ///
-/// Leading: hamburger IconButton that opens the drawer (Plan 12-04 wires it).
+/// Leading: hamburger IconButton that opens [ChatHistoryDrawer] via a [Builder].
 /// Center: circular Komo avatar + "Komo" title.
 class _KomoHeader extends StatelessWidget {
   @override
