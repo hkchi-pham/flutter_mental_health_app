@@ -49,7 +49,6 @@ class NotebookCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = notebookColorOf(notebook.color);
     final dateLabel = DateFormat('d MMM yyyy').format(notebook.createdAt);
-    final isPrivate = notebook.visibility == NotebookVisibility.private_;
 
     return GestureDetector(
       onTap: onTap,
@@ -133,16 +132,8 @@ class NotebookCover extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Visibility icon — bottom-right.
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Icon(
-                      isPrivate ? Icons.lock : Icons.public,
-                      size: 20,
-                      color: const Color(0xFF6B5A45),
-                    ),
-                  ),
+                  // Visibility icon removed from the cover (shown in the menu
+                  // instead) — UAT request 12-05 polish.
                 ],
               ),
             ),

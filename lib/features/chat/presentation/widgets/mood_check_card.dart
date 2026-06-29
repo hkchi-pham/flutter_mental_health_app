@@ -48,7 +48,7 @@ class MoodCheckCard extends StatelessWidget {
             // border; top inset increased to clear the frame's decorative top
             // leaf motif (FIX A — 12-05); bottom kept smaller so the mood
             // row stays inside the frame interior.
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+            padding: const EdgeInsets.fromLTRB(24, 48, 24, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

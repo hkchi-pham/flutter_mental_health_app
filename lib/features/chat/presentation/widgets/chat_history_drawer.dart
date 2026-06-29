@@ -119,9 +119,16 @@ class ChatHistoryDrawer extends StatelessWidget {
   Widget _buildNewConversationButton(
       BuildContext context, ChatProvider provider) {
     return ListTile(
-      leading: const Icon(Icons.add, color: _headerText),
+      leading: Image.asset(
+        'assets/ui_icons/icons/new_chat_icon_@3x.png',
+        width: 24,
+        height: 24,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, _) =>
+            const Icon(Icons.add, color: _headerText),
+      ),
       title: const Text(
-        '+ Cuộc trò chuyện mới',
+        'Cuộc trò chuyện mới',
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,

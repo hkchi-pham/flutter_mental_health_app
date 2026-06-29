@@ -95,19 +95,17 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 // CHAT-02: Komo header row — full screen width (FIX B — 12-05).
                 _KomoHeader(),
-                // Message list + mood area — capped at 500 px so mood card and
-                // bubbles don't stretch on wide screens (FIX B — 12-05).
+                // Message list — full screen width so bubbles hug the two
+                // screen edges; only the mood card is centered/constrained
+                // inside _MessageList (FIX — 12-05 polish).
                 Expanded(
-                  child: MaxWidthBox(
-                    maxWidth: 500,
-                    child: Consumer<ChatProvider>(
-                      builder: (context, provider, _) {
-                        return _MessageList(
-                          provider: provider,
-                          scrollController: _scrollController,
-                        );
-                      },
-                    ),
+                  child: Consumer<ChatProvider>(
+                    builder: (context, provider, _) {
+                      return _MessageList(
+                        provider: provider,
+                        scrollController: _scrollController,
+                      );
+                    },
                   ),
                 ),
                 // Bottom input bar — full screen width (FIX B — 12-05).
@@ -271,15 +269,23 @@ class _MessageList extends StatelessWidget {
   }
 
   Widget _moodArea(BuildContext context) {
+    // Mood area stays centered + width-capped while bubbles run full-width
+    // (FIX — 12-05 polish): wrap in MaxWidthBox so the card sits in the middle.
     if (!provider.moodCardCollapsed) {
       // Full mood-check card — scrolls with messages (MOOD-01).
-      return MoodCheckCard(onSelect: (mood) => provider.selectMood(mood));
+      return MaxWidthBox(
+        maxWidth: 500,
+        child: MoodCheckCard(onSelect: (mood) => provider.selectMood(mood)),
+      );
     }
     if (provider.selectedMood != null) {
       // Collapsed chip (MOOD-04).
-      return MoodChip(
-        mood: provider.selectedMood!,
-        onTap: () => provider.reopenMoodCard(),
+      return MaxWidthBox(
+        maxWidth: 500,
+        child: MoodChip(
+          mood: provider.selectedMood!,
+          onTap: () => provider.reopenMoodCard(),
+        ),
       );
     }
     // Should not happen in normal flow — return empty space.
