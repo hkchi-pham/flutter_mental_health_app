@@ -360,7 +360,11 @@ class _UserBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.75),
+              // Keep a fixed, phone-sized bubble width that hugs the screen
+              // edge — don't balloon to 75% of a wide laptop screen (UAT).
+              constraints: BoxConstraints(
+                maxWidth: (constraints.maxWidth * 0.75).clamp(0.0, 360.0),
+              ),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
@@ -407,7 +411,11 @@ class _BotBubble extends StatelessWidget {
             const KomoAvatar(size: 32),
             const SizedBox(width: 6),
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.75),
+              // Keep a fixed, phone-sized bubble width that hugs the screen
+              // edge — don't balloon to 75% of a wide laptop screen (UAT).
+              constraints: BoxConstraints(
+                maxWidth: (constraints.maxWidth * 0.75).clamp(0.0, 360.0),
+              ),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
