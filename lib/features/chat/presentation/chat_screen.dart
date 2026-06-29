@@ -91,14 +91,15 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           SafeArea(
-            child: MaxWidthBox(
-              maxWidth: 500,
-              child: Column(
-                children: [
-                  // CHAT-02: Komo header row.
-                  _KomoHeader(),
-                  // Message list + mood area.
-                  Expanded(
+            child: Column(
+              children: [
+                // CHAT-02: Komo header row — full screen width (FIX B — 12-05).
+                _KomoHeader(),
+                // Message list + mood area — capped at 500 px so mood card and
+                // bubbles don't stretch on wide screens (FIX B — 12-05).
+                Expanded(
+                  child: MaxWidthBox(
+                    maxWidth: 500,
                     child: Consumer<ChatProvider>(
                       builder: (context, provider, _) {
                         return _MessageList(
@@ -108,16 +109,17 @@ class _ChatScreenState extends State<ChatScreen> {
                       },
                     ),
                   ),
-                  // Bottom input bar — scoped Consumer so only the input rebuilds
-                  // on sending state changes.
-                  Consumer<ChatProvider>(
-                    builder: (context, provider, _) => ChatInputBar(
-                      enabled: !provider.sending,
-                      onSend: (text) => provider.send(text),
-                    ),
+                ),
+                // Bottom input bar — full screen width (FIX B — 12-05).
+                // Scoped Consumer so only the input rebuilds on sending state
+                // changes.
+                Consumer<ChatProvider>(
+                  builder: (context, provider, _) => ChatInputBar(
+                    enabled: !provider.sending,
+                    onSend: (text) => provider.send(text),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
