@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../chat/presentation/chat_screen.dart';
 import '../../garden/presentation/garden_screen.dart';
 import '../../journal/presentation/journal_list_screen.dart';
+import '../../profile/presentation/profile_screen.dart';
 
 /// The persistent post-login surface (CONTEXT decision 1, locked).
 ///
@@ -67,6 +68,7 @@ class _AppShellState extends State<AppShell> {
           GardenScreen(),
           JournalListScreen(),
           ChatScreen(),
+          ProfileScreen(),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -121,7 +123,7 @@ class _AppShellState extends State<AppShell> {
                 index: 3,
                 asset: null, // no profile asset — material icon only
                 fallback: Icons.person_outline,
-                enabled: false,
+                enabled: true,
               ),
               ],
             ),
