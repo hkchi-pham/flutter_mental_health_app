@@ -18,6 +18,9 @@ import 'features/garden/logic/garden_provider.dart';
 import 'features/chat/data/chat_repository.dart';
 import 'features/chat/data/remote/chat_remote_data_source.dart';
 import 'features/chat/logic/chat_provider.dart';
+import 'features/profile/data/profile_remote_data_source.dart';
+import 'features/profile/data/profile_repository.dart';
+import 'features/profile/logic/profile_provider.dart';
 import 'features/journal/data/cache/journal_cache_store.dart';
 import 'features/journal/data/cache/journal_change_queue.dart';
 import 'features/journal/data/journal_repository.dart';
@@ -129,6 +132,25 @@ class MyApp extends StatelessWidget {
               ChatProvider(repository: ctx.read<ChatRepository>()),
           update: (_, repo, prev) =>
               prev ?? ChatProvider(repository: repo),
+        ),
+
+        // ── Profile layer (Phase 13) ────────────────────────────────────────
+        //
+        // ProfileRepository wraps the remote data source for GET /users/me,
+        // PUT /users/{id} (name edit), and PUT /auth/password (change password).
+        // ProfileProvider is the single ChangeNotifier that the profile screen
+        // and settings dialog consume. Mirrors the journal/chat blocks above.
+        Provider<ProfileRepository>(
+          create: (ctx) => ProfileRepository(
+            ProfileRemoteDataSource(ctx.read<ApiClient>()),
+          ),
+        ),
+
+        ChangeNotifierProxyProvider<ProfileRepository, ProfileProvider>(
+          create: (ctx) =>
+              ProfileProvider(repository: ctx.read<ProfileRepository>()),
+          update: (_, repo, prev) =>
+              prev ?? ProfileProvider(repository: repo),
         ),
 
         // SyncCoordinator — event-driven triggers only (app-open / reconnect /
