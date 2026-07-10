@@ -6,6 +6,7 @@ import '../../../core/responsive.dart';
 import '../logic/profile_provider.dart';
 import 'widgets/edit_name_dialog.dart';
 import 'widgets/profile_header.dart';
+import 'widgets/profile_settings_section.dart';
 import 'widgets/stats_grid.dart';
 
 /// The Profile tab screen.
@@ -58,12 +59,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _editDialogVisible = false);
   }
 
-  // ── Settings slot placeholder ──────────────────────────────────────────────
-
-  // TODO(13-05): ProfileSettingsSection goes here.
-  // Plan 05 replaces this one-liner with:
-  //   return const ProfileSettingsSection();
-  Widget _settingsSlot() => const SizedBox.shrink();
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
@@ -114,9 +109,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           return _buildBody(provider);
                         },
                       ),
-                      const SizedBox(height: 24),
-                      // ── Settings slot (Plan 05 fills this) ────────────────
-                      _settingsSlot(),
                     ],
                   ),
                 ),
@@ -225,6 +217,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 28),
         StatsGrid(user: provider.user!),
+        const SizedBox(height: 28),
+        ProfileSettingsSection(
+          email: provider.user?.email ?? '',
+        ),
       ],
     );
   }
