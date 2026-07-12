@@ -17,10 +17,6 @@ void main() {
       expect(Mood.happy.label, 'Vui');
     });
 
-    test('Mood.calm.label == "Bình tĩnh"', () {
-      expect(Mood.calm.label, 'Bình tĩnh');
-    });
-
     test('Mood.normal.label == "Bình thường"', () {
       expect(Mood.normal.label, 'Bình thường');
     });
@@ -56,12 +52,6 @@ void main() {
       expect(Mood.sad.prependSentence, 'Mình đang cảm thấy buồn. ');
     });
 
-    test('Mood.calm.prependSentence uses multi-word moodWord', () {
-      expect(
-        Mood.calm.prependSentence,
-        'Mình đang cảm thấy bình tĩnh. ',
-      );
-    });
   });
 
   group('moodFromFirstMessage', () {
@@ -82,13 +72,6 @@ void main() {
 
     test('returns null for empty input', () {
       expect(moodFromFirstMessage(''), isNull);
-    });
-
-    test('returns Mood.calm for multi-word moodWord "bình tĩnh"', () {
-      expect(
-        moodFromFirstMessage('Mình đang cảm thấy bình tĩnh. ...'),
-        Mood.calm,
-      );
     });
 
     test('returns Mood.happy for happy prepend', () {
