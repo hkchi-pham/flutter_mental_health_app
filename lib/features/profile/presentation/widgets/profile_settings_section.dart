@@ -7,20 +7,29 @@ import '../../../auth/data/auth_repository.dart';
 import 'change_password_dialog.dart';
 
 // TODO: source app version from package_info_plus when the dep is added
-const _appVersion = '2.1.0';
+const _appVersion = '1.0.0';
 
-/// A "Cài đặt" settings section for the Profile screen.
+// ── Color constants ───────────────────────────────────────────────────────────
+const _primary = Color(0xFF4CAF50);
+const _primaryLight = Color(0xFFA5D6A7);
+const _textPrimary = Color(0xFF3E2723);
+const _textSecondary = Color(0xFF8D6E63);
+const _dividerColor = Color(0xFFE6D5A8);
+const _cardColor = Color(0xFFFFFDF5);
+const _dangerColor = Color(0xFFE57373);
+
+/// The "Cài đặt" settings section rendered below the stats grid.
 ///
-/// Contains five tiles — in order:
-///   1. Notifications toggle (persists to [SharedPreferences])
-///   2. Change password (opens [ChangePasswordDialog])
-///   3. Email (read-only display)
-///   4. About "Về Soul Garden" (framed dialog with version + credits)
-///   5. Logout (confirm dialog → clears token, AuthGate routes to login)
+/// Tiles (in order, 56 px each):
+///   1. Thông báo — icon_settings_noti, trailing Switch (SharedPreferences).
+///   2. Đổi mật khẩu — icon_settings_password, trailing chevron.
+///   3. Về Soul Garden — icon_setting_about, trailing chevron.
 ///
-/// Dark-mode and language tiles are deferred per SET-01 scope note.
+/// Logout button below the section with btn_logout_@3x.png background
+/// (or pill #E57373 fallback).
+///
+/// Footer: version + tagline.
 class ProfileSettingsSection extends StatefulWidget {
-  /// The authenticated user's email address (read-only display).
   final String email;
 
   const ProfileSettingsSection({super.key, required this.email});
@@ -84,7 +93,7 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
             style: GoogleFonts.quintessential(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF2F3E2E),
+              color: _textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -93,22 +102,19 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
             textAlign: TextAlign.center,
             style: GoogleFonts.quintessential(
               fontSize: 14,
-              color: const Color(0xFF5C4A2A),
+              color: _textSecondary,
               fontStyle: FontStyle.italic,
             ),
           ),
           const SizedBox(height: 12),
-          Divider(
-            color: const Color(0xFF8B6F47).withValues(alpha: 0.4),
-            thickness: 1,
-          ),
+          const Divider(color: _dividerColor, thickness: 1),
           const SizedBox(height: 10),
           Text(
             'Phiên bản $_appVersion',
             textAlign: TextAlign.center,
             style: GoogleFonts.quintessential(
               fontSize: 13,
-              color: const Color(0xFF5C4A2A),
+              color: _textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -117,7 +123,7 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
             textAlign: TextAlign.center,
             style: GoogleFonts.quintessential(
               fontSize: 12,
-              color: const Color(0xFF8B6F47),
+              color: _textSecondary,
             ),
           ),
         ],
@@ -138,7 +144,6 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
           onClose: () => entry.remove(),
           onConfirm: () async {
             await context.read<AuthRepository>().logout();
-            // AuthGate detects cleared session and routes to login automatically
           },
         ),
       ),
@@ -148,11 +153,7 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
 
   // ── Framed-dialog helper ───────────────────────────────────────────────────
 
-  /// Inserts a framed popup using the badge/settings OverlayEntry pattern.
-  void _showFramedDialog({
-    required String title,
-    required Widget child,
-  }) {
+  void _showFramedDialog({required String title, required Widget child}) {
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
     entry = OverlayEntry(
@@ -172,155 +173,214 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Section heading
+        // ── Section heading ─────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Text(
             'Cài đặt',
-            style: GoogleFonts.quintessential(
-              fontSize: 20,
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF2F3E2E),
+              color: _primaryLight,
+              letterSpacing: 0.5,
             ),
           ),
         ),
 
-        // ── 1. Notifications toggle ─────────────────────────────────────────
-        _SettingsTile(
-          icon: Icons.notifications_outlined,
-          label: 'Thông báo',
-          trailing: _loadedPrefs
-              ? Switch(
-                  value: _notificationsEnabled,
-                  onChanged: _toggleNotifications,
-                  activeThumbColor: const Color(0xFF2F3E2E),
-                  activeTrackColor: const Color(0xFFCDE0B4),
-                  inactiveThumbColor: const Color(0xFF8B6F47),
-                  inactiveTrackColor: const Color(0xFFD9C9A8),
-                )
-              : const SizedBox(
-                  width: 36,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+        // ── Settings card ───────────────────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: _cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 1. Notifications toggle
+              _SettingsTile(
+                iconAsset: 'assets/profile/icon_settings_noti_@3x.png',
+                fallbackIcon: Icons.notifications_outlined,
+                label: 'Thông báo',
+                trailing: _loadedPrefs
+                    ? Switch(
+                        value: _notificationsEnabled,
+                        onChanged: _toggleNotifications,
+                        activeThumbColor: _primary,
+                        activeTrackColor: _primaryLight,
+                        inactiveThumbColor: _textSecondary,
+                        inactiveTrackColor: _dividerColor,
+                      )
+                    : const SizedBox(
+                        width: 36,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _primary,
+                        ),
+                      ),
+              ),
+              const Divider(height: 1, thickness: 1, color: _dividerColor),
+              // 2. Change password
+              _SettingsTile(
+                iconAsset: 'assets/profile/icon_settings_password_@3x.png',
+                fallbackIcon: Icons.lock_outline,
+                label: 'Đổi mật khẩu',
+                onTap: _openChangePassword,
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: _textSecondary,
+                  size: 20,
                 ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // ── 2. Change password ──────────────────────────────────────────────
-        _SettingsTile(
-          icon: Icons.lock_outline,
-          label: 'Đổi mật khẩu',
-          onTap: _openChangePassword,
-          trailing: const Icon(
-            Icons.chevron_right,
-            color: Color(0xFF8B6F47),
-            size: 20,
+              ),
+              const Divider(height: 1, thickness: 1, color: _dividerColor),
+              // 3. About
+              _SettingsTile(
+                iconAsset: 'assets/profile/icon_setting_about_@3x.png',
+                fallbackIcon: Icons.info_outline,
+                label: 'Về Soul Garden',
+                onTap: _showAbout,
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: _textSecondary,
+                  size: 20,
+                ),
+              ),
+            ],
           ),
         ),
 
-        const SizedBox(height: 8),
-
-        // ── 3. Email (read-only) ────────────────────────────────────────────
-        _SettingsTile(
-          icon: Icons.email_outlined,
-          label: 'Email',
-          trailing: Text(
-            widget.email.isNotEmpty ? widget.email : '—',
-            style: GoogleFonts.quintessential(
-              fontSize: 13,
-              color: const Color(0xFF8B6F47),
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // ── 4. About ────────────────────────────────────────────────────────
-        _SettingsTile(
-          icon: Icons.info_outline,
-          label: 'Về Soul Garden',
-          onTap: _showAbout,
-          trailing: const Icon(
-            Icons.chevron_right,
-            color: Color(0xFF8B6F47),
-            size: 20,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // ── 5. Logout ───────────────────────────────────────────────────────
-        _SettingsTile(
-          icon: Icons.logout,
-          label: 'Đăng xuất',
-          onTap: _showLogoutConfirm,
-          labelColor: const Color(0xFFB03A2E),
-          iconColor: const Color(0xFFB03A2E),
-          borderColor: const Color(0xFFB03A2E).withValues(alpha: 0.4),
-        ),
-
+        // ── Logout button ───────────────────────────────────────────────────
         const SizedBox(height: 24),
+        _LogoutButton(onTap: _showLogoutConfirm),
+
+        // ── Footer ──────────────────────────────────────────────────────────
+        const SizedBox(height: 24),
+        const Text(
+          'v$_appVersion',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: Color(0xFFBDBDBD)),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Made with 💚 in Vietnam',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: Color(0xFFBDBDBD)),
+        ),
+        const SizedBox(height: 32),
       ],
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Shared tile widget
+// Settings tile
 // ---------------------------------------------------------------------------
 
 class _SettingsTile extends StatelessWidget {
-  final IconData icon;
+  final String iconAsset;
+  final IconData fallbackIcon;
   final String label;
   final VoidCallback? onTap;
   final Widget? trailing;
-  final Color? labelColor;
-  final Color? iconColor;
-  final Color? borderColor;
 
   const _SettingsTile({
-    required this.icon,
+    required this.iconAsset,
+    required this.fallbackIcon,
     required this.label,
     this.onTap,
     this.trailing,
-    this.labelColor,
-    this.iconColor,
-    this.borderColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final effectiveLabelColor = labelColor ?? const Color(0xFF2F3E2E);
-    final effectiveIconColor = iconColor ?? const Color(0xFF5C4A2A);
-    final effectiveBorderColor =
-        borderColor ?? const Color(0xFF8B6F47).withValues(alpha: 0.4);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 56,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Image.asset(
+                iconAsset,
+                width: 24,
+                height: 24,
+                errorBuilder: (_, _, _) => Icon(
+                  fallbackIcon,
+                  size: 22,
+                  color: _primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _textPrimary,
+                  ),
+                ),
+              ),
+              ?trailing,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+// ---------------------------------------------------------------------------
+// Logout button
+// ---------------------------------------------------------------------------
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5ECD8),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: effectiveBorderColor, width: 1),
-        ),
-        child: Row(
+      child: SizedBox(
+        height: 52,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Icon(icon, size: 20, color: effectiveIconColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.quintessential(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: effectiveLabelColor,
+            // Background image — pill btn_logout_@3x.png
+            ClipRRect(
+              borderRadius: BorderRadius.circular(26),
+              child: Image.asset(
+                'assets/profile/btn_logout_@3x.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  decoration: BoxDecoration(
+                    color: _dangerColor,
+                    borderRadius: BorderRadius.circular(26),
+                  ),
                 ),
               ),
             ),
-            ?trailing,
+            // Label centered over the button
+            const Center(
+              child: Text(
+                'Đăng xuất',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -332,9 +392,7 @@ class _SettingsTile extends StatelessWidget {
 // Framed overlay dialog (About / Logout confirm)
 // ---------------------------------------------------------------------------
 
-/// Stateful widget implementing the 200ms scale+fade entrance.
-/// Matches the [SettingsMenuPopup] / [EditNameDialog] pattern exactly:
-///   frame_info_page_@2x.png, cream fill 0xFFEBDDB8, cancel button in gutter.
+/// 200ms scale+fade entrance — mirrors [EditNameDialog] / badge-popup pattern.
 class _FramedOverlayDialog extends StatefulWidget {
   final String title;
   final VoidCallback onClose;
@@ -387,7 +445,7 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () {}, // cancel-only — backdrop absorbs taps
+                onTap: () {},
                 child: Container(
                   color: Colors.black.withValues(alpha: _backdrop.value),
                 ),
@@ -439,7 +497,6 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Cream interior fill
                 Positioned(
                   top: popupHeight * creamTopFrac,
                   bottom: popupHeight * creamBottomFrac,
@@ -447,7 +504,6 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
                   right: popupWidth * creamRightFrac,
                   child: Container(color: const Color(0xFFEBDDB8)),
                 ),
-                // Frame image
                 Positioned.fill(
                   child: Image.asset(
                     'assets/ui_icons/frames/frame_info_page_@2x.png',
@@ -464,7 +520,6 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
                     ),
                   ),
                 ),
-                // Content
                 Positioned.fill(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
@@ -482,12 +537,12 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
                           style: GoogleFonts.quintessential(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2F3E2E),
+                            color: _textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Divider(
-                          color: const Color(0xFF8B6F47).withValues(alpha: 0.4),
+                        const Divider(
+                          color: _dividerColor,
                           thickness: 1,
                         ),
                         const SizedBox(height: 10),
@@ -499,7 +554,6 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
               ],
             ),
           ),
-          // Cancel (X) button in the right gutter
           Positioned(
             top: popupHeight * 0.05,
             right: 8,
@@ -529,10 +583,7 @@ class _FramedOverlayDialogState extends State<_FramedOverlayDialog>
 // ---------------------------------------------------------------------------
 
 class _LogoutDialogContent extends StatefulWidget {
-  /// Called when the user confirms logout (after AuthRepository.logout()).
   final Future<void> Function() onConfirm;
-
-  /// Called when the user cancels — removes the overlay entry.
   final VoidCallback onClose;
 
   const _LogoutDialogContent({
@@ -551,7 +602,6 @@ class _LogoutDialogContentState extends State<_LogoutDialogContent> {
     if (_loggingOut) return;
     setState(() => _loggingOut = true);
     await widget.onConfirm();
-    // AuthGate routes to login; widget may be unmounted before this line.
     if (mounted) widget.onClose();
   }
 
@@ -565,7 +615,7 @@ class _LogoutDialogContentState extends State<_LogoutDialogContent> {
           textAlign: TextAlign.center,
           style: GoogleFonts.quintessential(
             fontSize: 14,
-            color: const Color(0xFF5C4A2A),
+            color: _textSecondary,
           ),
         ),
         const Spacer(),
@@ -580,7 +630,7 @@ class _LogoutDialogContentState extends State<_LogoutDialogContent> {
                     color: const Color(0xFFF5ECD8),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: const Color(0xFF8B6F47).withValues(alpha: 0.5),
+                      color: _dividerColor,
                     ),
                   ),
                   child: Text(
@@ -588,7 +638,7 @@ class _LogoutDialogContentState extends State<_LogoutDialogContent> {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.quintessential(
                       fontSize: 15,
-                      color: const Color(0xFF2F3E2E),
+                      color: _textPrimary,
                     ),
                   ),
                 ),
@@ -597,15 +647,13 @@ class _LogoutDialogContentState extends State<_LogoutDialogContent> {
             const SizedBox(width: 8),
             Expanded(
               child: GestureDetector(
-                onTap: _loggingOut
-                    ? null
-                    : _handleConfirm,
+                onTap: _loggingOut ? null : _handleConfirm,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     color: _loggingOut
-                        ? const Color(0xFFB03A2E).withValues(alpha: 0.4)
-                        : const Color(0xFFB03A2E),
+                        ? _dangerColor.withValues(alpha: 0.4)
+                        : _dangerColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: _loggingOut

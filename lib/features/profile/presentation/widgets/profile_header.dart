@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/profile_user.dart';
 
-/// The Komo avatar path used as the default profile picture.
-///
-/// Photo upload is deferred (no file-storage infrastructure in this phase).
-/// The edit flow edits the NAME only — no image picker.
-const String komoAssetPath = 'assets/ui_icons/icons/komo_avatar_@3x.png';
+/// Default Komo avatar path used when [ProfileUser.avatar] is empty.
+const String _komoAvatarPath = 'assets/profile/komo_avatar_default_@3x.png';
 
-/// Profile header widget: circle avatar (default Komo icon), fullname, and
-/// read-only @username.
+/// Avatar frame overlay path (decorative frame drawn on top of the avatar).
+const String _avatarFramePath = 'assets/profile/avatar_frame_@3x.png';
+
+/// Profile header section.
 ///
-/// Wrapping the avatar + name in a [GestureDetector] so that tapping either
-/// one calls [onEdit] (per success criterion: "tap avatar OR name opens the
-/// edit modal").
+/// Renders a ~250 px tall rounded gradient container (sage green → light green,
+/// since profile_header_bg.png is not available) with:
+///   - Centered avatar (framed by [_avatarFramePath]), tappable to open edit.
+///   - User fullname (24 sp bold #3E2723, centered).
+///   - User email (14 sp regular #8D6E63, centered).
+///   - Subtle "tap to edit" hint row.
 ///
-/// If [ProfileUser.avatar] is a non-empty string it is attempted first, with a
-/// fallback to the Komo default. Every [Image.asset] call has an errorBuilder.
+/// Tapping the avatar OR the name triggers [onEdit].
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
     super.key,
@@ -25,106 +25,138 @@ class ProfileHeader extends StatelessWidget {
     required this.onEdit,
   });
 
-  /// The loaded profile data providing fullname, userName, and optional avatar.
   final ProfileUser user;
-
-  /// Called when the user taps the avatar or the name — opens the edit modal.
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onEdit,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Circle avatar ───────────────────────────────────────────────
-          _buildAvatar(),
-          const SizedBox(height: 12),
-          // ── Full name ───────────────────────────────────────────────────
-          Text(
-            user.fullname.isEmpty ? '—' : user.fullname,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.quintessential(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF2F3E2E),
-            ),
-          ),
-          const SizedBox(height: 4),
-          // ── @username (read-only) ───────────────────────────────────────
-          Text(
-            '@${user.userName}',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.quintessential(
-              fontSize: 15,
-              color: const Color(0xFF8B6F47),
-            ),
-          ),
-          const SizedBox(height: 4),
-          // ── Subtle "tap to edit" hint ────────────────────────────────────
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.edit_outlined,
-                size: 14,
-                color: const Color(0xFF8B6F47).withValues(alpha: 0.7),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Chỉnh sửa tên',
-                style: GoogleFonts.quintessential(
-                  fontSize: 12,
-                  color: const Color(0xFF8B6F47).withValues(alpha: 0.7),
-                ),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF4CAF50), Color(0xFFA5D6A7)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onEdit,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Framed avatar ─────────────────────────────────────────────
+            _buildFramedAvatar(),
+            const SizedBox(height: 14),
+            // ── Fullname ──────────────────────────────────────────────────
+            Text(
+              user.fullname.isEmpty ? '—' : user.fullname,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF3E2723),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // ── Email ─────────────────────────────────────────────────────
+            Text(
+              user.email.isEmpty ? '—' : user.email,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF5D4037),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // ── Tap-to-edit hint ──────────────────────────────────────────
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.edit_outlined,
+                  size: 13,
+                  color: const Color(0xFF3E2723).withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Chỉnh sửa tên',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: const Color(0xFF3E2723).withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildAvatar() {
-    // Use user.avatar if it looks like a valid path/URL; otherwise fall back to
-    // the Komo default.
-    final avatarSource =
-        (user.avatar.isNotEmpty) ? user.avatar : komoAssetPath;
+  Widget _buildFramedAvatar() {
+    // Determine the inner avatar source.
+    final avatarSrc =
+        user.avatar.isNotEmpty ? user.avatar : _komoAvatarPath;
 
-    return ClipOval(
-      child: Container(
-        width: 96,
-        height: 96,
-        color: const Color(0xFFEBDDB8),
-        child: Image.asset(
-          avatarSource,
-          width: 96,
-          height: 96,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) {
-            // If the avatar path fails, try the Komo default before giving up.
-            if (avatarSource != komoAssetPath) {
-              return Image.asset(
-                komoAssetPath,
-                width: 96,
-                height: 96,
+    return SizedBox(
+      width: 104,
+      height: 104,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Inner avatar — circular clipped
+          ClipOval(
+            child: Container(
+              width: 88,
+              height: 88,
+              color: const Color(0xFFDCEDC8),
+              child: Image.asset(
+                avatarSrc,
+                width: 88,
+                height: 88,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const Icon(
-                  Icons.person,
-                  size: 56,
-                  color: Color(0xFF8B6F47),
-                ),
-              );
-            }
-            return const Icon(
-              Icons.person,
-              size: 56,
-              color: Color(0xFF8B6F47),
-            );
-          },
-        ),
+                errorBuilder: (_, _, _) {
+                  if (avatarSrc != _komoAvatarPath) {
+                    return Image.asset(
+                      _komoAvatarPath,
+                      width: 88,
+                      height: 88,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.person,
+                        size: 52,
+                        color: Color(0xFF8D6E63),
+                      ),
+                    );
+                  }
+                  return const Icon(
+                    Icons.person,
+                    size: 52,
+                    color: Color(0xFF8D6E63),
+                  );
+                },
+              ),
+            ),
+          ),
+          // Decorative frame overlay
+          Positioned.fill(
+            child: Image.asset(
+              _avatarFramePath,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+        ],
       ),
     );
   }

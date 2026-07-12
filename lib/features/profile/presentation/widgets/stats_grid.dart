@@ -1,24 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/profile_user.dart';
 
-/// A 2-column grid of six cream-framed stat cards showing the user's counts.
+/// Stats card background image path.
+const String _cardBgPath = 'assets/profile/stats_card_bg_@3x.png';
+
+/// A 3-column × 2-row grid of stat cards showing the user's counts.
 ///
-/// The pinned card order is:
-///   1. Trees planted   (treeGrown)
-///   2. Journal entries (journalCount)
-///   3. Conversations   (conversationCount)
-///   4. Badges earned   (badgeCount)
-///   5. Water           (waterUnits) — dewdrop asset icon
-///   6. Seeds           (points)     — seed asset icon
+/// Card order (design guide): Cây | Nhật ký | Badge | Water | Seeds | Chat.
 ///
 /// [StatsGrid] takes a loaded [ProfileUser].
-/// [StatsGrid.skeleton] renders the same grid with placeholder shimmer cards.
+/// [StatsGrid.skeleton] renders the same grid with pulsing placeholder cards.
 class StatsGrid extends StatelessWidget {
   const StatsGrid({super.key, required this.user}) : _skeleton = false;
 
-  /// Skeleton loading variant — same 2-col grid, muted placeholder cards.
+  /// Skeleton loading variant — same 3-col grid, muted placeholder cards.
   const StatsGrid.skeleton({super.key})
       : user = null,
         _skeleton = true;
@@ -29,12 +25,12 @@ class StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.4,
+      childAspectRatio: 1.05,
       children: _skeleton ? _buildSkeletonCards() : _buildStatCards(),
     );
   }
@@ -42,62 +38,12 @@ class StatsGrid extends StatelessWidget {
   List<Widget> _buildStatCards() {
     final u = user!;
     return [
-      _StatCard(
-        icon: const Icon(Icons.park, size: 28, color: Color(0xFF2F3E2E)),
-        value: u.treeGrown,
-        label: 'Cây đã trồng',
-      ),
-      _StatCard(
-        icon: const Icon(Icons.menu_book, size: 28, color: Color(0xFF2F3E2E)),
-        value: u.journalCount,
-        label: 'Nhật ký',
-      ),
-      _StatCard(
-        icon: const Icon(
-          Icons.chat_bubble_outline,
-          size: 28,
-          color: Color(0xFF2F3E2E),
-        ),
-        value: u.conversationCount,
-        label: 'Trò chuyện',
-      ),
-      _StatCard(
-        icon: const Icon(
-          Icons.emoji_events,
-          size: 28,
-          color: Color(0xFF2F3E2E),
-        ),
-        value: u.badgeCount,
-        label: 'Huy hiệu',
-      ),
-      _StatCard(
-        icon: Image.asset(
-          'assets/ui_icons/icons/dewdrop_icon_@2x.png',
-          width: 28,
-          height: 28,
-          errorBuilder: (_, _, _) => const Icon(
-            Icons.water_drop_outlined,
-            size: 28,
-            color: Color(0xFF2F3E2E),
-          ),
-        ),
-        value: u.waterUnits,
-        label: 'Nước',
-      ),
-      _StatCard(
-        icon: Image.asset(
-          'assets/ui_icons/icons/seed_icon_@2x.png',
-          width: 28,
-          height: 28,
-          errorBuilder: (_, _, _) => const Icon(
-            Icons.eco_outlined,
-            size: 28,
-            color: Color(0xFF2F3E2E),
-          ),
-        ),
-        value: u.points,
-        label: 'Hạt giống',
-      ),
+      _StatCard(emoji: '🌱', value: u.treeGrown, label: 'Cây'),
+      _StatCard(emoji: '📝', value: u.journalCount, label: 'Nhật ký'),
+      _StatCard(emoji: '🏅', value: u.badgeCount, label: 'Badge'),
+      _StatCard(emoji: '💧', value: u.waterUnits, label: 'Water'),
+      _StatCard(emoji: '🌰', value: u.points, label: 'Seeds'),
+      _StatCard(emoji: '💬', value: u.conversationCount, label: 'Chat'),
     ];
   }
 
@@ -110,60 +56,77 @@ class StatsGrid extends StatelessWidget {
 // Stat card
 // ---------------------------------------------------------------------------
 
-/// A cream-framed stat card showing an icon, a count, and a Vietnamese label.
+/// A single stat card with an optional [stats_card_bg_@3x.png] background,
+/// showing a large emoji, a bold count, and a short Vietnamese label.
 class _StatCard extends StatelessWidget {
   const _StatCard({
-    required this.icon,
+    required this.emoji,
     required this.value,
     required this.label,
   });
 
-  final Widget icon;
+  final String emoji;
   final int value;
   final String label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEBDDB8),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF8B6F47), width: 1.5),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8B6F47).withValues(alpha: 0.15),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 6,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          icon,
-          const SizedBox(height: 6),
-          Text(
-            '$value',
-            style: GoogleFonts.quintessential(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF2F3E2E),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Background — image first, fallback to off-white container
+            Image.asset(
+              _cardBgPath,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                color: const Color(0xFFFFFDF5),
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.quintessential(
-              fontSize: 11,
-              color: const Color(0xFF8B6F47),
+            // Content overlay
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 28)),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$value',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E7D32),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF8D6E63),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -173,9 +136,7 @@ class _StatCard extends StatelessWidget {
 // Skeleton card
 // ---------------------------------------------------------------------------
 
-/// A muted placeholder card shown while profile data loads.
-///
-/// Uses a gentle pulsing opacity animation to indicate loading state.
+/// Pulsing placeholder card shown while profile data loads.
 class _SkeletonCard extends StatefulWidget {
   const _SkeletonCard();
 
@@ -215,11 +176,7 @@ class _SkeletonCardState extends State<_SkeletonCard>
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFD9CBAA),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFF8B6F47).withValues(alpha: 0.3),
-              width: 1.5,
-            ),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),

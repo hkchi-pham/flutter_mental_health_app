@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/responsive.dart';
@@ -9,22 +8,23 @@ import 'widgets/profile_header.dart';
 import 'widgets/profile_settings_section.dart';
 import 'widgets/stats_grid.dart';
 
+// ── Design palette ────────────────────────────────────────────────────────────
+const _bgColor = Color(0xFFFFF8E1);
+const _textSecondary = Color(0xFF8D6E63);
+const _primary = Color(0xFF4CAF50);
+const _dividerColor = Color(0xFFE6D5A8);
+
 /// The Profile tab screen.
 ///
-/// Loads [ProfileProvider] data on mount via [addPostFrameCallback] to avoid
-/// calling [BuildContext] methods during initState.
+/// Loads [ProfileProvider] data on mount via [addPostFrameCallback].
 ///
-/// State transitions driven by [ProfileProvider.status]:
-///   - [ProfileStatus.loading]  → skeleton header + [StatsGrid.skeleton]
-///   - [ProfileStatus.error]    → friendly Vietnamese message + retry button
-///   - [ProfileStatus.loaded]   → [ProfileHeader] + [StatsGrid]
+/// State transitions:
+///   - [ProfileStatus.loading] → skeleton header + [StatsGrid.skeleton]
+///   - [ProfileStatus.error]   → friendly Vietnamese message + retry button
+///   - [ProfileStatus.loaded]  → [ProfileHeader] + [StatsGrid] + settings
 ///
-/// The name-edit flow ([EditNameDialog]) is inserted as a full-screen [Stack]
-/// overlay managed in this [State], mirroring the badge/settings popup pattern.
-///
-/// A placeholder settings slot (`_settingsSlot`) is provided at the bottom of
-/// the scroll column so that Plan 13-05 can swap one line without touching the
-/// rest of the screen.
+/// Full-screen background: #FFF8E1 (warm cream).
+/// Layout: single ScrollView, MaxWidthBox (500 px cap), 16 px horizontal padding.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -33,21 +33,16 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  /// Whether the [EditNameDialog] overlay is currently shown.
   bool _editDialogVisible = false;
 
   @override
   void initState() {
     super.initState();
-    // Load after the first frame so context.read is safe and the Scaffold is
-    // fully mounted.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ProfileProvider>().load();
     });
   }
-
-  // ── Edit-name overlay ──────────────────────────────────────────────────────
 
   void _openEditName() {
     if (_editDialogVisible) return;
@@ -59,16 +54,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _editDialogVisible = false);
   }
 
-
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // ── Main screen content ──────────────────────────────────────────────
         _buildMainContent(context),
-        // ── EditNameDialog overlay (shown above everything) ──────────────────
         if (_editDialogVisible)
           Positioned.fill(
             child: Consumer<ProfileProvider>(
@@ -86,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildMainContent(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6EFE0),
+      backgroundColor: _bgColor,
       body: SafeArea(
         child: MaxWidthBox(
           child: CustomScrollView(
@@ -100,14 +90,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Title ──────────────────────────────────────────────
-                      _buildTitle(),
-                      const SizedBox(height: 24),
-                      // ── Body — driven by ProfileStatus ─────────────────────
                       Consumer<ProfileProvider>(
-                        builder: (context, provider, _) {
-                          return _buildBody(provider);
-                        },
+                        builder: (context, provider, _) =>
+                            _buildBody(provider),
                       ),
                     ],
                   ),
@@ -116,18 +101,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTitle() {
-    return Text(
-      'Hồ sơ',
-      textAlign: TextAlign.center,
-      style: GoogleFonts.quintessential(
-        fontSize: 26,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFF2F3E2E),
       ),
     );
   }
@@ -148,8 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLoadingState() {
     return Column(
       children: [
-        _SkeletonHeader(),
-        const SizedBox(height: 28),
+        const _SkeletonHeader(),
+        const SizedBox(height: 20),
         const StatsGrid.skeleton(),
       ],
     );
@@ -160,22 +133,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildErrorState(ProfileProvider provider) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32),
+        padding: const EdgeInsets.symmetric(vertical: 48),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.cloud_off_outlined,
-              size: 48,
-              color: const Color(0xFF8B6F47).withValues(alpha: 0.7),
+              size: 52,
+              color: _textSecondary.withValues(alpha: 0.7),
             ),
             const SizedBox(height: 16),
             Text(
               provider.errorMessage ?? 'Không tải được hồ sơ. Thử lại.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.quintessential(
+              style: const TextStyle(
                 fontSize: 15,
-                color: const Color(0xFF5C4A2A),
+                color: _textSecondary,
               ),
             ),
             const SizedBox(height: 20),
@@ -183,16 +156,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: provider.load,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
+                  horizontal: 28,
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2F3E2E),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _primary,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Text(
+                child: const Text(
                   'Thử lại',
-                  style: GoogleFonts.quintessential(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -210,29 +190,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLoadedState(ProfileProvider provider) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // 1. Header
         ProfileHeader(
           user: provider.user!,
           onEdit: _openEditName,
         ),
-        const SizedBox(height: 28),
-        StatsGrid(user: provider.user!),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
+        // 2. Stats grid (3 × 2)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0),
+          child: StatsGrid(user: provider.user!),
+        ),
+        const SizedBox(height: 20),
+        // 3. Divider
+        _buildDivider(),
+        const SizedBox(height: 20),
+        // 4. Settings + logout + footer
         ProfileSettingsSection(
           email: provider.user?.email ?? '',
         ),
       ],
     );
   }
+
+  Widget _buildDivider() {
+    return Image.asset(
+      'assets/profile/profile_divider_@3x.png',
+      height: 16,
+      fit: BoxFit.fitWidth,
+      errorBuilder: (_, _, _) => const Divider(
+        color: _dividerColor,
+        thickness: 1,
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Skeleton header — placeholder shown while profile loads
+// Skeleton header — new-design style
 // ---------------------------------------------------------------------------
 
-/// A muted grey-cream placeholder mimicking [ProfileHeader] for the loading
-/// state. Animates with a gentle pulsing opacity.
+/// Pulsing placeholder matching the new gradient-header shape while loading.
 class _SkeletonHeader extends StatefulWidget {
+  const _SkeletonHeader();
+
   @override
   State<_SkeletonHeader> createState() => _SkeletonHeaderState();
 }
@@ -266,43 +269,48 @@ class _SkeletonHeaderState extends State<_SkeletonHeader>
       animation: _opacity,
       builder: (_, _) => Opacity(
         opacity: _opacity.value,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Circle avatar placeholder
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9CBAA),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFF8B6F47).withValues(alpha: 0.3),
-                  width: 1.5,
+        child: Container(
+          width: double.infinity,
+          height: 220,
+          decoration: BoxDecoration(
+            color: const Color(0xFFA5D6A7),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Avatar placeholder
+              Container(
+                width: 88,
+                height: 88,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF81C784),
+                  shape: BoxShape.circle,
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
-            // Fullname placeholder bar
-            Container(
-              width: 160,
-              height: 18,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9CBAA),
-                borderRadius: BorderRadius.circular(6),
+              const SizedBox(height: 14),
+              // Name bar
+              Container(
+                width: 160,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF81C784),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            // @username placeholder bar
-            Container(
-              width: 100,
-              height: 13,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9CBAA),
-                borderRadius: BorderRadius.circular(6),
+              const SizedBox(height: 8),
+              // Email bar
+              Container(
+                width: 120,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF81C784),
+                  borderRadius: BorderRadius.circular(6),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
