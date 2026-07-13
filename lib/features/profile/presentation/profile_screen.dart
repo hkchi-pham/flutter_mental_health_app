@@ -235,24 +235,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: SizedBox(
             width: availableWidth,
             height: branchHeight,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(count, (_) {
-                return Image.asset(
-                  'assets/profile/profile_divider_@3x.png',
-                  width: branchDisplayWidth,
-                  height: branchHeight,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => SizedBox(
+            child: OverflowBox(
+              minWidth: 0,
+              maxWidth: double.infinity,
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(count, (_) {
+                  return Image.asset(
+                    'assets/profile/profile_divider_@3x.png',
                     width: branchDisplayWidth,
                     height: branchHeight,
-                    child: const Divider(
-                      color: _dividerColor,
-                      thickness: 1,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => SizedBox(
+                      width: branchDisplayWidth,
+                      height: branchHeight,
+                      child: const Divider(
+                        color: _dividerColor,
+                        thickness: 1,
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
           ),
         );

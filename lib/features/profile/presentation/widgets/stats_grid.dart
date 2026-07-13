@@ -69,29 +69,51 @@ class StatsGrid extends StatelessWidget {
             .floor()
             .clamp(3, _totalCards);
 
-        // Keep the card width close to [_targetCardWidth].  On a phone the
-        // three cards will fill the row exactly; on wider screens there may be
-        // a small amount of extra space distributed by the GridView.
-        final double cardWidth =
-            (availableWidth - _cardGap * (columns - 1)) / columns;
-
+        // Cards are ALWAYS fixed at [_targetCardWidth]. Extra horizontal space
+        // is distributed as spacing between/around cards (spaceEvenly), so
+        // nothing is enlarged or cropped.
+        const double cardWidth = _targetCardWidth;
         // Cards are roughly square-ish with a little extra height for content.
         const double cardHeight = _targetCardWidth * 1.1;
-        final double childAspectRatio = cardWidth / cardHeight;
 
         // Icon size: ~33% of card width, clamped to 30–40 logical px.
-        final double iconSize = (cardWidth * 0.33).clamp(30.0, 40.0);
+        const double iconSize = cardWidth * 0.33;
+        const double clampedIconSize =
+            iconSize < 30.0 ? 30.0 : (iconSize > 40.0 ? 40.0 : iconSize);
 
-        return GridView.count(
-          crossAxisCount: columns,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: _cardGap,
-          mainAxisSpacing: _cardGap,
-          childAspectRatio: childAspectRatio,
-          children: _skeleton
-              ? _buildSkeletonCards()
-              : _buildStatCards(iconSize),
+        final List<Widget> cards = _skeleton
+            ? _buildSkeletonCards()
+            : _buildStatCards(clampedIconSize);
+
+        // Split cards into rows of [columns] items.
+        final List<Widget> rows = [];
+        for (int i = 0; i < cards.length; i += columns) {
+          final rowCards = cards.sublist(
+            i,
+            (i + columns).clamp(0, cards.length),
+          );
+          rows.add(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: rowCards
+                  .map(
+                    (card) => SizedBox(
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: card,
+                    ),
+                  )
+                  .toList(),
+            ),
+          );
+          if (i + columns < cards.length) {
+            rows.add(const SizedBox(height: _cardGap));
+          }
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: rows,
         );
       },
     );

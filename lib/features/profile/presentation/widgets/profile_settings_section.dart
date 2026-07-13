@@ -349,39 +349,46 @@ class _LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        height: 52,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background image — pill btn_logout_@3x.png
-            ClipRRect(
-              borderRadius: BorderRadius.circular(26),
-              child: Image.asset(
-                'assets/profile/btn_logout_@3x.png',
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
-                  decoration: BoxDecoration(
-                    color: _dangerColor,
-                    borderRadius: BorderRadius.circular(26),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: GestureDetector(
+          onTap: onTap,
+          child: SizedBox(
+            height: 52,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Background image — pill btn_logout_@3x.png.
+                // BoxFit.contain keeps the pill graphic fully visible
+                // (never cropped) at any screen width.
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Image.asset(
+                    'assets/profile/btn_logout_@3x.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => Container(
+                      decoration: BoxDecoration(
+                        color: _dangerColor,
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            // Label centered over the button
-            const Center(
-              child: Text(
-                'Đăng xuất',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                // Label centered over the button
+                const Center(
+                  child: Text(
+                    'Đăng xuất',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
