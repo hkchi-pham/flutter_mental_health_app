@@ -8,7 +8,7 @@ const String _cardBgPath = 'assets/profile/stats_card_bg_@3x.png';
 // ── Icon asset paths ──────────────────────────────────────────────────────────
 const String _iconTree = 'assets/ui_icons/icons/tree_icon_sprout_@3x.png';
 const String _iconJournal = 'assets/ui_icons/icons/journal_btn_@3x.png';
-const String _iconBadge = 'assets/ui_icons/icons/badge_level_@3x.png';
+const String _iconBadge = 'assets/ui_icons/icons/badge_page_btn_@3x.png';
 const String _iconWater = 'assets/ui_icons/icons/dewdrop_icon_@3x.png';
 const String _iconSeed = 'assets/ui_icons/icons/seed_icon_@3x.png';
 const String _iconChat = 'assets/ui_icons/icons/chat_icon_@3x.png';

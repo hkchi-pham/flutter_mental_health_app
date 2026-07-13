@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/responsive.dart';
 import '../logic/profile_provider.dart';
 import 'widgets/edit_name_dialog.dart';
 import 'widgets/profile_header.dart';
@@ -24,7 +23,7 @@ const _dividerColor = Color(0xFFE6D5A8);
 ///   - [ProfileStatus.loaded]  → [ProfileHeader] + [StatsGrid] + settings
 ///
 /// Full-screen background: #FFF8E1 (warm cream).
-/// Layout: single ScrollView, MaxWidthBox (500 px cap), 16 px horizontal padding.
+/// Layout: single ScrollView, full-screen width, 16 px horizontal padding.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -78,28 +77,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: _bgColor,
       body: SafeArea(
-        child: MaxWidthBox(
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 24,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Consumer<ProfileProvider>(
-                        builder: (context, provider, _) =>
-                            _buildBody(provider),
-                      ),
-                    ],
-                  ),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Consumer<ProfileProvider>(
+                      builder: (context, provider, _) =>
+                          _buildBody(provider),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
