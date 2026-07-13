@@ -220,10 +220,12 @@ class _StatCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background — image first, fallback to off-white container
+            // Background — image first, fallback to off-white container.
+            // BoxFit.fill shows the ENTIRE frame image (no side cropping);
+            // the card is fixed-size so the slight stretch is imperceptible.
             Image.asset(
               _cardBgPath,
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
               errorBuilder: (_, _, _) => Container(
                 color: const Color(0xFFFFFDF5),
               ),
