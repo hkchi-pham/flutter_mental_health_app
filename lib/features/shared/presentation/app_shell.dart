@@ -121,7 +121,7 @@ class _AppShellState extends State<AppShell> {
               ),
               _navItem(
                 index: 3,
-                asset: null, // no profile asset — material icon only
+                asset: 'assets/ui_icons/icons/komo_avatar_@3x.png',
                 fallback: Icons.person_outline,
                 enabled: true,
               ),
