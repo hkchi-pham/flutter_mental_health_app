@@ -216,13 +216,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDivider() {
-    return Image.asset(
-      'assets/profile/profile_divider_@3x.png',
-      height: 16,
-      fit: BoxFit.fitWidth,
-      errorBuilder: (_, _, _) => const Divider(
-        color: _dividerColor,
-        thickness: 1,
+    // Fix 2: use BoxFit.contain so the full leaf/branch is never clipped.
+    // A generous height (64 px) gives the asset room to render completely;
+    // the contain fit scales it down if needed, centred horizontally.
+    return Center(
+      child: Image.asset(
+        'assets/profile/profile_divider_@3x.png',
+        height: 64,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => const Divider(
+          color: _dividerColor,
+          thickness: 1,
+        ),
       ),
     );
   }
