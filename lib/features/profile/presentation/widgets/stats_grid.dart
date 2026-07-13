@@ -13,19 +13,39 @@ const String _iconWater = 'assets/ui_icons/icons/dewdrop_icon_@3x.png';
 const String _iconSeed = 'assets/ui_icons/icons/seed_icon_@3x.png';
 const String _iconChat = 'assets/ui_icons/icons/chat_icon_@3x.png';
 
-/// A 3-column × 2-row grid of stat cards showing the user's counts.
+/// The target width of a single stat card in logical pixels.
+/// Derived from phone layout: (360px screen − 32px padding − 24px gaps) / 3 ≈ 101px.
+/// We use ~148px to match the card size seen on a typical phone (≈360–400dp wide).
+const double _targetCardWidth = 148.0;
+
+/// Gap between cards (matches the profile section's 12 px gaps).
+const double _cardGap = 12.0;
+
+/// Total number of stat cards — clamps the max column count.
+const int _totalCards = 6;
+
+/// A responsive grid of stat cards showing the user's counts.
 ///
 /// Card order (design guide): Cây | Nhật ký | Badge | Water | Seeds | Chat.
 ///
+/// Reflow behaviour:
+///   - Each card is kept at [_targetCardWidth] (≈148 dp) — it does NOT enlarge.
+///   - The column count is derived from the available width so extra space is
+///     filled by showing MORE columns at the same card size, mirroring the
+///     Journal tab's responsive approach:
+///       `columns = max(3, floor((width + gap) / (targetCardWidth + gap)))`
+///     clamped to at most [_totalCards] (6) so the grid is never wider than
+///     one full row. Phone → 3 col / 2 rows; tablet/iPad → 4–5 col; wide
+///     desktop → 6 col / 1 row.
+///   - childAspectRatio is computed from [_targetCardWidth] so the card height
+///     stays consistent regardless of column count (cards are square-ish).
+///
 /// [StatsGrid] takes a loaded [ProfileUser].
 /// [StatsGrid.skeleton] renders the same grid with pulsing placeholder cards.
-///
-/// Fix 3: Wrapped in [LayoutBuilder] so card sizing is driven by available
-/// width, making the grid scale proportionally across phone→tablet widths.
 class StatsGrid extends StatelessWidget {
   const StatsGrid({super.key, required this.user}) : _skeleton = false;
 
-  /// Skeleton loading variant — same 3-col grid, muted placeholder cards.
+  /// Skeleton loading variant — same responsive grid, muted placeholder cards.
   const StatsGrid.skeleton({super.key})
       : user = null,
         _skeleton = true;
@@ -37,39 +57,48 @@ class StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive card sizing: fill available width with 3 cols + gaps.
-        const int crossAxisCount = 3;
-        const double horizontalPadding = 0; // grid padding within this widget
-        const double crossAxisSpacing = 12.0;
-        const double mainAxisSpacing = 12.0;
+        final double availableWidth = constraints.maxWidth;
 
-        final double totalSpacing =
-            crossAxisSpacing * (crossAxisCount - 1) + horizontalPadding * 2;
+        // Compute how many columns of [_targetCardWidth] cards fit in the
+        // available width, starting from a minimum of 3 (phone default).
+        // Formula: (width + gap) / (cardWidth + gap) — the +gap on the
+        // numerator accounts for the fact that the last card has no trailing
+        // gap. Clamp between 3 and totalCards.
+        final int columns = ((availableWidth + _cardGap) /
+                (_targetCardWidth + _cardGap))
+            .floor()
+            .clamp(3, _totalCards);
+
+        // Keep the card width close to [_targetCardWidth].  On a phone the
+        // three cards will fill the row exactly; on wider screens there may be
+        // a small amount of extra space distributed by the GridView.
         final double cardWidth =
-            (constraints.maxWidth - totalSpacing) / crossAxisCount;
+            (availableWidth - _cardGap * (columns - 1)) / columns;
 
-        // Cards are roughly square with a slight taller ratio for content room.
-        final double cardHeight = cardWidth * 1.1;
+        // Cards are roughly square-ish with a little extra height for content.
+        const double cardHeight = _targetCardWidth * 1.1;
         final double childAspectRatio = cardWidth / cardHeight;
 
+        // Icon size: ~33% of card width, clamped to 30–40 logical px.
+        final double iconSize = (cardWidth * 0.33).clamp(30.0, 40.0);
+
         return GridView.count(
-          crossAxisCount: crossAxisCount,
+          crossAxisCount: columns,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: crossAxisSpacing,
-          mainAxisSpacing: mainAxisSpacing,
+          crossAxisSpacing: _cardGap,
+          mainAxisSpacing: _cardGap,
           childAspectRatio: childAspectRatio,
-          children:
-              _skeleton ? _buildSkeletonCards() : _buildStatCards(cardWidth),
+          children: _skeleton
+              ? _buildSkeletonCards()
+              : _buildStatCards(iconSize),
         );
       },
     );
   }
 
-  List<Widget> _buildStatCards(double cardWidth) {
+  List<Widget> _buildStatCards(double iconSize) {
     final u = user!;
-    // Icon size: ~33% of card width, clamped to 30–40 logical px.
-    final double iconSize = (cardWidth * 0.33).clamp(30.0, 40.0);
     return [
       _StatCard(
         iconPath: _iconTree,
@@ -123,7 +152,7 @@ class StatsGrid extends StatelessWidget {
   }
 
   List<Widget> _buildSkeletonCards() {
-    return List.generate(6, (_) => const _SkeletonCard());
+    return List.generate(_totalCards, (_) => const _SkeletonCard());
   }
 }
 

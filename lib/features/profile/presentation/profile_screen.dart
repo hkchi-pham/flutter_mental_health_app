@@ -213,19 +213,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDivider() {
-    // Fix 2: use BoxFit.contain so the full leaf/branch is never clipped.
-    // A generous height (64 px) gives the asset room to render completely;
-    // the contain fit scales it down if needed, centred horizontally.
-    return Center(
-      child: Image.asset(
-        'assets/profile/profile_divider_@3x.png',
-        height: 64,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => const Divider(
-          color: _dividerColor,
-          thickness: 1,
-        ),
-      ),
+    // The branch asset has a natural display width of ~330 logical pixels.
+    // On a phone (≈360dp after 16px padding on each side → ~328dp) this means
+    // exactly 1 branch fills the row.  On an iPad (≈700dp) → 2 branches.
+    // On a wide desktop (≈1000+dp) → 3+ branches.
+    //
+    // Implementation: LayoutBuilder measures the available width, computes how
+    // many branch copies are needed, lays them in a Row, and clips the last
+    // one so it never overflows.  BoxFit.contain at a fixed 56px height keeps
+    // each branch at its natural proportions without stretching.
+    const double branchHeight = 56.0;
+    const double branchDisplayWidth = 330.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double availableWidth = constraints.maxWidth;
+        final int count =
+            (availableWidth / branchDisplayWidth).ceil().clamp(1, 8);
+
+        return ClipRect(
+          child: SizedBox(
+            width: availableWidth,
+            height: branchHeight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(count, (_) {
+                return Image.asset(
+                  'assets/profile/profile_divider_@3x.png',
+                  width: branchDisplayWidth,
+                  height: branchHeight,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => SizedBox(
+                    width: branchDisplayWidth,
+                    height: branchHeight,
+                    child: const Divider(
+                      color: _dividerColor,
+                      thickness: 1,
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        );
+      },
     );
   }
 }
