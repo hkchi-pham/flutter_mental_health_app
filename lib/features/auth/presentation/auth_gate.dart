@@ -5,6 +5,8 @@ import '../data/auth_repository.dart';
 import '../data/auth_session.dart';
 import '../../shared/network/api_client.dart';
 import '../../shared/presentation/app_shell.dart';
+import '../../onboarding/data/onboarding_store.dart';
+import '../../onboarding/presentation/onboarding_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'splash_screen.dart';
@@ -42,6 +44,17 @@ class _AuthGateState extends State<AuthGate> {
   /// build to receive the "Session expired" notice via [initialMessage].
   bool _sessionExpired = false;
 
+  /// Thin SharedPreferences wrapper — constructed ad hoc (not in the provider
+  /// tree) mirroring how other stores are used in this project.
+  final OnboardingStore _onboardingStore = OnboardingStore();
+
+  /// Whether the device has already completed (or skipped) onboarding.
+  ///
+  /// Defaults to `true` so that a [SharedPreferences] read failure degrades
+  /// gracefully to "skip onboarding, show garden" rather than trapping the
+  /// user in the onboarding flow on every launch.
+  bool _onboardingComplete = true;
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +71,16 @@ class _AuthGateState extends State<AuthGate> {
       // drive the screen switch.
       await context.read<AuthRepository>().restore();
 
+      // Read the onboarding flag alongside restore so the authenticated branch
+      // already knows whether to show OnboardingScreen or go straight to
+      // AppShell — no second full-screen flash.
+      final complete = await _onboardingStore.isComplete();
+
       if (!mounted) return;
-      setState(() => _phase = _Phase.ready);
+      setState(() {
+        _onboardingComplete = complete;
+        _phase = _Phase.ready;
+      });
     });
   }
 
@@ -108,6 +129,26 @@ class _AuthGateState extends State<AuthGate> {
       // Clear transient flags so a subsequent logout + re-login starts fresh.
       _sessionExpired = false;
       _showRegister = false;
+
+      // ── Onboarding gate ─────────────────────────────────────────────────────
+      // Show the intro flow exactly once — before the garden — when the device
+      // has not yet completed (or skipped) onboarding.  The flag was read
+      // during the restore phase so there is no extra async wait here.
+      //
+      // onDone persists the flag via markComplete() THEN calls setState so the
+      // next build falls straight through to AppShell.  Both Skip and Bắt đầu
+      // on OnboardingScreen call onDone — so skipping also persists the flag
+      // (ONBOARD-02/03: never re-shows after skip).
+      if (!_onboardingComplete) {
+        return OnboardingScreen(
+          onDone: () async {
+            await _onboardingStore.markComplete();
+            if (!mounted) return;
+            setState(() => _onboardingComplete = true); // rebuild → AppShell
+          },
+        );
+      }
+
       return const AppShell();
     }
 
