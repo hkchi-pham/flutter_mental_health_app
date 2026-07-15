@@ -44,6 +44,11 @@ class _AuthGateState extends State<AuthGate> {
   /// build to receive the "Session expired" notice via [initialMessage].
   bool _sessionExpired = false;
 
+  /// Minimum time the branded [SplashScreen] stays on screen at cold launch,
+  /// so the "Soul Garden" logo is actually seen rather than flashing for a
+  /// single frame (the secure-storage reads it overlaps are near-instant).
+  static const Duration _minSplashDuration = Duration(milliseconds: 2000);
+
   /// Thin SharedPreferences wrapper — constructed ad hoc (not in the provider
   /// tree) mirroring how other stores are used in this project.
   final OnboardingStore _onboardingStore = OnboardingStore();
@@ -68,13 +73,19 @@ class _AuthGateState extends State<AuthGate> {
 
       // restore() reads TokenStore, populates ApiClient token + AuthSession.
       // After it returns we flip to ready and let context.watch<AuthSession>
-      // drive the screen switch.
+      // drive the screen switch. The onboarding flag is read alongside restore
+      // so the authenticated branch already knows whether to show
+      // OnboardingScreen or go straight to AppShell — no second full-screen
+      // flash.
+      //
+      // A minimum splash duration runs CONCURRENTLY with the (near-instant)
+      // secure-storage reads so the branded "Soul Garden" logo is actually
+      // visible on cold launch instead of flashing for a single frame. Start
+      // the timer first, do the fast reads, then wait out any remaining time.
+      final splashDelay = Future<void>.delayed(_minSplashDuration);
       await context.read<AuthRepository>().restore();
-
-      // Read the onboarding flag alongside restore so the authenticated branch
-      // already knows whether to show OnboardingScreen or go straight to
-      // AppShell — no second full-screen flash.
       final complete = await _onboardingStore.isComplete();
+      await splashDelay;
 
       if (!mounted) return;
       setState(() {
