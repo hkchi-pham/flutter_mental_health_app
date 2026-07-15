@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../auth/data/auth_repository.dart';
+import '../../../onboarding/data/onboarding_store.dart';
 import 'change_password_dialog.dart';
 
 // TODO: source app version from package_info_plus when the dep is added
@@ -151,6 +152,19 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
     overlay.insert(entry);
   }
 
+  // ── Hidden dev reset ───────────────────────────────────────────────────────
+
+  Future<void> _resetOnboarding() async {
+    await OnboardingStore().reset();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Đã đặt lại phần giới thiệu. Khởi động lại ứng dụng để xem lại.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   // ── Framed-dialog helper ───────────────────────────────────────────────────
 
   void _showFramedDialog({required String title, required Widget child}) {
@@ -261,10 +275,13 @@ class _ProfileSettingsSectionState extends State<ProfileSettingsSection> {
 
         // ── Footer ──────────────────────────────────────────────────────────
         const SizedBox(height: 24),
-        const Text(
-          'v$_appVersion',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: Color(0xFFBDBDBD)),
+        GestureDetector(
+          onLongPress: _resetOnboarding,
+          child: const Text(
+            'v$_appVersion',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Color(0xFFBDBDBD)),
+          ),
         ),
         const SizedBox(height: 4),
         const Text(
