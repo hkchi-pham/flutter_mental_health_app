@@ -132,6 +132,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  void _previousPage() {
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -165,7 +172,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   child: Text(
                     'Bỏ qua',
-                    style: GoogleFonts.quintessential(
+                    style: GoogleFonts.nunito(
                       fontSize: 14,
                       color: _cream,
                       fontWeight: FontWeight.w600,
@@ -176,7 +183,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          // ── Bottom bar: dots + primary button ───────────────────────────
+          // ── Bottom bar: previous + dots + primary button ─────────────────
           Positioned(
             bottom: 0,
             left: 0,
@@ -195,6 +202,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // Previous button — hidden on page 0, visible on pages 1–4
+                    Visibility(
+                      visible: _index > 0,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: TextButton(
+                        onPressed: _index > 0 ? _previousPage : null,
+                        style: TextButton.styleFrom(
+                          foregroundColor: _cream,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: _cream.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          'Quay lại',
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _cream,
+                          ),
+                        ),
+                      ),
+                    ),
+
                     // Page indicator dots
                     _DotsIndicator(
                       count: _pages.length,
@@ -283,13 +320,14 @@ class _PageView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Headline
+                    // Headline — switched from dancingScript to nunito (all
+                    // 5 headlines contain Vietnamese diacritics)
                     Text(
                       page.headline,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.dancingScript(
+                      style: GoogleFonts.nunito(
                         fontSize: 26,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: _cream,
                         shadows: const [
                           Shadow(
@@ -306,7 +344,7 @@ class _PageView extends StatelessWidget {
                     Text(
                       page.blurb,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.quintessential(
+                      style: GoogleFonts.nunito(
                         fontSize: 15,
                         color: _cream.withValues(alpha: 0.9),
                         height: 1.55,
@@ -401,7 +439,7 @@ class _PrimaryButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.quintessential(
+          style: GoogleFonts.nunito(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: cream,
