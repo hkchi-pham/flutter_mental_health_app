@@ -49,10 +49,10 @@ const List<_PageSpec> _pages = [
         'Ghi lại những suy nghĩ và cảm xúc mỗi ngày. Viết nhiều hơn, khu vườn của bạn sẽ ngày '
         'càng xanh tươi hơn!',
   ),
-  // 4 — Chat (Komo IS chat)
+  // 4 — Chat
   _PageSpec(
     background: 'assets/screens/chat_screen_background.png',
-    icon: 'assets/profile/komo_avatar_default_@3x.png',
+    icon: 'assets/ui_icons/icons/chat_btn_@3x.png',
     headline: 'Trò chuyện cùng Komo',
     blurb:
         'Bất cứ lúc nào bạn muốn chia sẻ, mình luôn ở đây để lắng nghe và đồng hành cùng bạn.',
