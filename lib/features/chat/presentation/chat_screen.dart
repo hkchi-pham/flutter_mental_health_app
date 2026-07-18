@@ -8,6 +8,7 @@ import 'widgets/chat_bubble.dart' show KomoAvatar, kChatCream, kSageGreen;
 import 'widgets/chat_history_drawer.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/mood_check_card.dart';
+import 'widgets/suggestion_card.dart';
 import 'widgets/typing_indicator.dart';
 
 /// The main chat screen with full-bleed background, Komo header, scrollable
@@ -335,11 +336,24 @@ class _ChatBubbleDelegate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: message.role == ChatRole.user
-          ? _UserBubble(content: message.content)
-          : _BotBubble(content: message.content),
+    if (message.role == ChatRole.user) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: _UserBubble(content: message.content),
+      );
+    }
+    // Bot message: bubble + optional suggestion card tied together in a Column.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: _BotBubble(content: message.content),
+        ),
+        if (message.actionRecommendation != null)
+          SuggestionCard(recommendation: message.actionRecommendation!),
+      ],
     );
   }
 }
