@@ -1,6 +1,7 @@
 import '../../../shared/network/api_client.dart';
 import '../dto/conversation_dto.dart';
 import '../dto/message_dto.dart';
+import '../models/action_recommendation.dart';
 
 /// Thin wrapper over the Phase 12 backend's `/conversations` and `/messages`
 /// endpoints.
@@ -83,16 +84,17 @@ class ChatRemoteDataSource {
     }
   }
 
-  /// POST /messages/chat — sends a user message and returns the AI reply text.
+  /// POST /messages/chat — sends a user message and returns a [ChatSendResult].
   ///
   /// AI-01: The AI logic runs entirely on the backend. The frontend sends the
-  /// user's message content and receives the bot's reply text in `ai_response`.
+  /// user's message content and receives the bot's reply text in `ai_response`
+  /// plus an optional `action_recommendation` object.
   ///
   /// IMPORTANT: The [AIChatResponse] is at the JSON ROOT — NOT under `data`.
   ///
   /// Lets [ApiException] propagate so the UI can surface an error/retry row
   /// (AI-03).
-  Future<String> sendChat({
+  Future<ChatSendResult> sendChat({
     required String conversationId,
     required String content,
   }) async {
@@ -102,7 +104,10 @@ class ChatRemoteDataSource {
       'message_type': 'text',
     });
     // Response is at the JSON root — NOT under body['data'].
-    return '${(body is Map ? body['ai_response'] : null) ?? ''}';
+    final reply = '${(body is Map ? body['ai_response'] : null) ?? ''}';
+    final recommendation =
+        ActionRecommendation.fromJsonOrNull(body is Map ? body['action_recommendation'] : null);
+    return ChatSendResult(reply: reply, recommendation: recommendation);
   }
 
   /// DELETE /conversations/{id} — deletes a conversation.

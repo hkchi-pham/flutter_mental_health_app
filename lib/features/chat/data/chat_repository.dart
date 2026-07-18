@@ -1,3 +1,4 @@
+import 'models/action_recommendation.dart';
 import 'models/chat_message.dart';
 import 'models/conversation.dart';
 import 'remote/chat_remote_data_source.dart';
@@ -66,14 +67,16 @@ class ChatRepository {
     return dtos.map((dto) => dto.toLocal()).toList();
   }
 
-  /// Sends [content] to the AI and returns the bot's reply text.
+  /// Sends [content] to the AI and returns a [ChatSendResult] containing the
+  /// bot's reply text and an optional [ActionRecommendation].
   ///
   /// AI-01: the AI runs entirely on the backend. The frontend sends the user's
-  /// message and receives only the reply string — no AI logic in the client.
+  /// message and receives the reply string plus a structured recommendation —
+  /// no AI logic in the client.
   ///
   /// AI-03: lets [ApiException] propagate so the UI can display an error/retry
   /// row without the repository swallowing the failure.
-  Future<String> sendChat({
+  Future<ChatSendResult> sendChat({
     required String conversationId,
     required String content,
   }) =>

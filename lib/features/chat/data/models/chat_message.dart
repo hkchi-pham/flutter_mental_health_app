@@ -1,3 +1,5 @@
+import 'action_recommendation.dart';
+
 /// Role of a chat participant.
 enum ChatRole {
   /// A message sent by the human user.
@@ -11,11 +13,17 @@ enum ChatRole {
 ///
 /// NOTE: The backend [MessageRead] schema omits `created_at`, so this model
 /// carries no timestamp. Display ordering follows the backend's list order.
+///
+/// When the backend includes an `action_recommendation` alongside a bot reply,
+/// the recommendation is attached here so the UI can render a [SuggestionCard]
+/// directly under this message's bubble. Null for user messages and bot messages
+/// that had no recommendation.
 class ChatMessage {
   const ChatMessage({
     required this.id,
     required this.role,
     required this.content,
+    this.actionRecommendation,
   });
 
   /// Server-assigned message id.
@@ -27,6 +35,14 @@ class ChatMessage {
   /// Raw text content of the message.
   final String content;
 
+  /// Optional activity recommendation attached to a bot reply.
+  ///
+  /// Non-null only for [ChatRole.bot] messages where the backend returned an
+  /// `action_recommendation` object alongside `ai_response`.
+  final ActionRecommendation? actionRecommendation;
+
   @override
-  String toString() => 'ChatMessage(id: $id, role: $role, content: $content)';
+  String toString() =>
+      'ChatMessage(id: $id, role: $role, content: $content, '
+      'actionRecommendation: $actionRecommendation)';
 }

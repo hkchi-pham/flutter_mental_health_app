@@ -338,15 +338,16 @@ class ChatProvider extends ChangeNotifier {
       }
       final id = activeConversationId!;
 
-      // Send to AI and append bot reply.
-      final reply = await _repo.sendChat(
+      // Send to AI and append bot reply + optional recommendation.
+      final result = await _repo.sendChat(
         conversationId: id,
         content: content,
       );
       final botMsg = ChatMessage(
         id: 'bot_${DateTime.now().microsecondsSinceEpoch}',
         role: ChatRole.bot,
-        content: reply,
+        content: result.reply,
+        actionRecommendation: result.recommendation,
       );
       messages = [...messages, botMsg];
 
